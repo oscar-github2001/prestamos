@@ -1,0 +1,219 @@
+<%- include('../layouts/header') %>
+<form  id="formFormaPago" method="POST">
+    <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+        <p style="font-weight: 400; color: #000; font-size: 18px;">Agregar forma de pago</p>
+        <div class="col-md-12">
+            <div class="form-group mb-3">
+                <label for="nombre" class="form-label form-label-sm mb-2">Nombre</label>
+                <input type="text" class="form-control form-control-sm" id="nombre" name="nombre" placeholder="Digite una forma de pago">
+            </div>  
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>  
+    </div>
+</form>
+<div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-12 pt-2 pb-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+    </div>
+    <di class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm" id="tabla_formapago" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="formapagoModal" tabindex="-1" aria-labelledby="formapagoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="formapagoModalLabel">Actualizar Forma de Pago</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="actualizar_formapago">
+                <div class="mb-3">
+                    <input type="hidden" class="form-control" id="act_idformapago" name="act_idformapago">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="act_ciudad" class="form-label mb-2">Nombre</label>
+                    <input type="text" class="form-control" id="act_nombre" name="act_nombre">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>       
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        $('#tabla_formapago').DataTable({
+            columnDefs: [
+                { "orderable": false, "targets": [1, 2] } 
+                ],
+            lengthChange: false,
+            info: false,
+            scrollX: true,
+            scrollCollapse: true,
+            ajax: {
+                url: '/admin/table_payshape',
+                dataSrc: ''
+            },
+            columns: [
+                { data: 'descripcion',  className: 'text-center'  },
+                {
+                data: null,
+                render: function(data, type, row) {
+                    return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.idformapago + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+                },
+                className: 'text-center'
+                },
+                {
+                data: null,
+                render: function(data, type, row) {
+                    return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.idformapago + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                },
+                className: 'text-center'
+                }
+            ],
+            dom: 'lrtip',
+            language: {
+                search: '',
+                "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+            },
+        });
+    });
+
+    $('#buscar').on('keyup', function () {
+        $('#tabla_formapago').DataTable().search(this.value).draw();
+    });
+
+    $('#formFormaPago').on('submit', function(event) {
+        event.preventDefault();
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/payshape',
+            method: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_formapago').DataTable().ajax.reload();
+                Swal.fire({
+                    title: 'Forma de pago registrada',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formFormaPago')[0].reset(); // Vaciar los campos del formulario
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+    $('#actualizar_formapago').on('submit', function(e) {
+        e.preventDefault(); 
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_payshape',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_formapago').DataTable().ajax.reload();
+                $('#formapagoModal').modal('hide');
+                Swal.fire({
+                    title: 'Forma de Pago Actualizada',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);  
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-delete', function() {
+        const id = $(this).data('id');
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '¡Sí, bórralo!',
+            cancelButtonText: 'Cancelar'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+            $.ajax({
+                url: '/admin/delete_payshape/' + id,
+                method: 'DELETE',
+                success: function(respuesta) {
+                $('#tabla_formapago').DataTable().ajax.reload();
+                Swal.fire(
+                    '¡Eliminado!',
+                    respuesta.mensaje,
+                    'success'
+                )
+                console.log(respuesta);
+                },
+                error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+                }
+            });
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+        url: '/admin/edit_payshape/' + id,
+        dataType: 'json',
+        type: 'GET',
+        success: function(resultado) {
+            $('#actualizar_formapago input[name="act_idformapago"]').val(resultado.idformapago);
+            $('#actualizar_formapago input[name="act_nombre"]').val(resultado.descripcion);
+            $('#formapagoModal').modal('show');
+        },
+        error: function(err) {
+            console.log(err);
+        }
+        });
+    });
+</script>
+<%- include('../layouts/footer') %>

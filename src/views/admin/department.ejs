@@ -1,0 +1,315 @@
+<%- include('../layouts/header') %>
+<form  id="formDepartamento" method="POST">
+  <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <p style="font-weight: 400; color: #000; font-size: 18px;">Agregar departamento</p>
+    <div class="col-md-6">
+      <div class="form-group mb-3">
+        <label for="departamento" class="form-label">Departamento</label>
+        <input type="text" class="form-control form-control-sm" id="departamento" name="departamento" placeholder="Digite un departamento">
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="form-group mb-3">
+        <label for="pais" class="form-label">País</label>
+        <select name="pais" class="form-control form-control-sm" id="pais" placeholder="Seleccione un país" required>
+          <option value="">Seleccione una opción</option>
+          <% for(let i=0; i < resultado.length; i++) { %>
+            <option value="<%= resultado[i].idpais %>"><%= resultado[i].nombre %></option>
+          <% } %>
+        </select>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="mb-2">
+          <button type="submit" class="submit">Agregar</button>
+      </div>
+    </div>   
+  </div>
+</form>
+<div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+  <div class="col-md-6 pt-2 pb-2">
+    <div class="form-group">
+      <select name="fpais" class="form-control form-control-sm" id="fpais">
+        <% for(let i=0; i < resultado.length; i++) { %>
+          <option value="<%= resultado[i].idpais %>"><%= resultado[i].nombre %></option>
+        <% } %>
+      </select>
+    </div>
+  </div>
+  <div class="col-md-6 pt-2 pb-2">
+      <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+  </div>
+  <div class="col-md-12">
+    <div class="table-responsive">
+      <table class="table table-hover table-sm" id="tabla_departamento" style="width: 100%;">
+        <thead>
+            <tr class="table">
+                <th scope="col">Departamento</th>
+                <th scope="col">País</th>
+                <th scope="col"></th>
+                <th scope="col"></th>
+            </tr>
+        </thead class="table-striped">
+        <tbody>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="modal fade" id="departamentoModal" tabindex="-1" aria-labelledby="departamentoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="departamentoModalLabel">Actualizar Departamento</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="actualizar_departamentos">
+            <div class="mb-3">
+              <input type="hidden" class="form-control" id="act_iddepartamento" name="act_iddepartamento">
+            </div>
+            <div class="mb-3">
+              <label for="recipient-name" class="col-form-label">Departamentos</label>
+              <input type="text" class="form-control" id="act_departamento" name="act_departamento">
+            </div>
+            <div class="mb-3">
+              <select class="form-control" aria-label="Default select example" id="act_pais" name="act_pais"></select>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              <button type="submit" class="btn btn-primary">Guardarr</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div> 
+   
+<script>
+  $(document).ready(function(){
+    // muestra el loader antes de enviar la solicitud Ajax
+    $(document).ajaxStart(function() {
+      $('#loading-screen').show();
+    });
+
+    // oculta el loader después de recibir la respuesta
+    $(document).ajaxStop(function() {
+      $('#loading-screen').hide();
+    });
+    
+    $('#tabla_departamento').DataTable({
+      columnDefs: [
+                { "orderable": false, "targets": [2, 3] } 
+                ],
+      lengthChange: false,
+      info: false,
+      scrollX: true,
+      scrollCollapse: true,
+      ajax: {
+        url: '/admin/table_department',
+        dataSrc: ''
+      },
+      columns: [
+        { data: 'nombre',  className: 'text-center'  },
+        { data: 'pais',  className: 'text-center'  },
+        {
+        data: null,
+        render: function(data, type, row) {
+            return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.iddepartamento + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+        },
+        className: 'text-center'
+        },
+        {
+        data: null,
+        render: function(data, type, row) {
+            return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.iddepartamento + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+        },
+        className: 'text-center'
+        }
+      ],
+      dom: 'lrtip',
+      language: {
+          search: '',
+          "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+      },
+    });
+  });
+
+  $('#buscar').on('keyup', function () {
+      $('#tabla_departamento').DataTable().search(this.value).draw();
+  });
+
+  $('#fpais').change(function() {
+    let id = $(this).val();
+    $('#tabla_departamento').DataTable().destroy();
+    $('#tabla_departamento').DataTable({
+      columnDefs: [
+                { "orderable": false, "targets": [2, 3] } 
+                ],
+      lengthChange: false,
+      info: false,
+      ajax: {
+        url: '/admin/table_department/'+ id,
+        dataSrc: ''
+      },
+      columns: [
+        { data: 'nombre',  className: 'text-center'  },
+          { data: 'pais',  className: 'text-center'  },
+          {
+          data: null,
+          render: function(data, type, row) {
+              return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.iddepartamento + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+          },
+          className: 'text-center'
+          },
+          {
+          data: null,
+          render: function(data, type, row) {
+              return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.iddepartamento + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+          },
+          className: 'text-center'
+        }
+      ],
+      language: traducciones_espanol
+    });
+  });
+
+  $(document).on('click', '.btn-edit', function() {
+    const id = $(this).data('id');
+    $.ajax({
+      url: '/admin/edit_department/' + id,
+      dataType: 'json',
+      method: 'GET',
+      success: function(resultado) {
+        $('#actualizar_departamentos input[name="act_iddepartamento"]').val(resultado.iddepartamento);
+        $('#actualizar_departamentos input[name="act_departamento"]').val(resultado.nombre);
+        $.ajax({
+          url: '/admin/edit_department_paises',
+          type: 'GET',
+          dataType: 'json',
+          success: function(data) {
+            let combobox = $('select[name="act_pais"]');
+            combobox.empty();
+            $.each(data, function(index, value) {
+                if(resultado.idpais == value.idpais){
+                  combobox.append($('<option selected>').text(value.nombre).attr('value', value.idpais));
+                }else{
+                  combobox.append($('<option>').text(value.nombre).attr('value', value.idpais));
+                }
+            });
+            $('#departamentoModal').modal('show');
+          }
+        });
+        
+      },
+      error: function(err) {
+        console.log(err);
+      }
+    });
+  });
+  
+  $('#formDepartamento').on('submit', function(event) {
+  //  $("#loading-screen").show(); // Mostrar el loade
+    event.preventDefault();
+    let datosFormulario = $(this).serialize(); 
+    $.ajax({
+      url: '/admin/department',
+      method: 'POST',
+      data: datosFormulario,
+      dataType: 'json',
+      success: function(respuesta) {
+        //setTimeout(function() {
+          $('#tabla_departamento').DataTable().ajax.reload();
+          Swal.fire({
+            title: 'Departamento registrado',
+            text: respuesta.mensaje,
+            icon: 'success'
+          });
+          console.log(respuesta);
+          $('#formDepartamento')[0].reset(); 
+         // $("#loading-screen").hide();
+        //}, 1000); // Retrasar la ejecución por 2 segundos
+      },
+      error: function(error) {
+        Swal.fire({
+          title: 'Error',
+          text:  error.responseJSON.mensaje,
+          icon: 'error'
+        });
+        console.log(error);
+        //$(".loader").hide();
+      }
+    });
+  });
+  
+  $(document).on('click', '.btn-delete', function() {
+    const id = $(this).data('id');
+
+      Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: '¡Sí, bórralo!',
+        cancelButtonText: 'Cancelar'
+      }).then((resultado) => {
+      if (resultado.isConfirmed) {
+        $.ajax({
+          url: '/admin/delete_department/' + id,
+          method: 'DELETE',
+          success: function(respuesta) {
+            $('#tabla_departamento').DataTable().ajax.reload();
+            Swal.fire(
+              '¡Eliminado!',
+                respuesta.mensaje,
+              'success'
+            )
+            console.log(respuesta);
+          },
+          error: function(error) {
+            Swal.fire({
+              title: 'Error',
+              text:  error.responseJSON.mensaje,
+              icon: 'error'
+            });
+            
+            console.log(error);
+          }
+        });
+      } 
+    });    
+  });
+
+  $('#actualizar_departamentos').on('submit', function(e) {
+    e.preventDefault(); 
+    let datosFormulario = $(this).serialize(); 
+    $.ajax({
+      url: '/admin/update_department',
+      method: 'POST',
+      data: datosFormulario,
+      dataType: 'json',
+      success: function(respuesta) {
+        $('#tabla_departamento').DataTable().ajax.reload();
+        $('#departamentoModal').modal('hide');
+        Swal.fire({
+          title: 'Departamento actualizado',
+          text: respuesta.mensaje,
+          icon: 'success'
+        });
+        console.log(respuesta);
+      },
+      error: function(error) {
+        Swal.fire({
+          title: 'Error',
+          text:  error.responseJSON.mensaje,
+          icon: 'error'
+        });
+        console.log(error);
+      }
+    });
+  });
+</script>
+<%- include('../layouts/footer') %>

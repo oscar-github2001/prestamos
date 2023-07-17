@@ -1,0 +1,133 @@
+<%- include('../layouts/header') %>
+<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div id="prestamo" class="col-md-6"></div>
+    <div id="monto_prestamo" class="col-md-4"></div>
+</div>
+<script>
+    $.ajax({
+        url: '/admin/graph_loan',
+        method: 'GET',
+        dataType: 'json',
+        success: function(data){
+            const chartConfig = {
+                chart: {
+                    type: 'column',
+                    renderTo: 'prestamo'
+                },
+                title: {
+                    text: 'Ganancias Mensuales'
+                },
+                xAxis: {
+                    categories: data.ganancia_mes_dolar.map(item => item.año_mes)
+                },
+                yAxis: {
+                    title: {
+                        text: 'Ganancias'
+                    }
+                },
+                series: [{
+                    name: 'Córdobas',
+                    data: data.ganancia_mes_cordoba.map(item => item.ganancia_mes)   
+                },
+                {
+                    name: 'Dólares',
+                    data: data.ganancia_mes_dolar.map(item => item.ganancia_mes)
+                }]
+            };
+            const chart = new Highcharts.Chart(chartConfig);
+        },
+        error: function(error){
+
+        }
+    })
+
+
+       
+   /* $.ajax({
+        url: '/admin/graph_loan',
+        method: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Generar la configuración del gráfico
+            const chartConfig = {
+                chart: {
+                    type: 'column',
+                    renderTo: '#prestamo'
+                },
+                title: {
+                    text: 'Préstamos por mes'
+                },
+                xAxis: {
+                    categories: data.prestamo_mes.map(item => item.año_mes),
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: '# Préstamos'
+                    }
+                },
+                series: [
+                    {
+                        name: 'Préstamos',
+                        data: data.prestamo_mes.map(item => item.ganancia_mes),
+                        colorByPoint: true
+                    }
+                ]
+            };
+            // Generar la gráfica utilizando Highcharts
+            const chart = new Highcharts.Chart(chartConfig);
+        },
+        error: function(error) {
+            console.error(error);
+        }
+    });*/
+
+    $.ajax({
+        url: '/admin/graph_loan',
+        method: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            // Generar la configuración del gráfico
+            const chartConfig = {
+                chart: {
+                    type: 'line',
+                    renderTo: 'monto_prestamo'
+                },
+                title: {
+                    text: 'Monto prestado por mes'
+                },
+                xAxis: {
+                    categories: data.monto_prestado_mes.map(item => item.año_mes),
+                    crosshair: true
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Monto prestado'
+                    },
+                    
+                },
+                series: [
+                    {
+                        name: 'Monto',
+                        data: data.monto_prestado_mes.map(item => item.monto),
+                        colorByPoint: true,
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function() {
+                                return  '$' + this.y; 
+                            }
+                        }
+                    }
+                ],
+            };
+            // Generar la gráfica utilizando Highcharts
+            const chart = new Highcharts.Chart(chartConfig);
+        },
+        error: function(error) {
+            console.error(error);
+        }
+    });
+</script>
+<%- include('../layouts/footer') %>

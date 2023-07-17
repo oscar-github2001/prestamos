@@ -1,0 +1,36 @@
+<%- include('../layouts/header') %>
+<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-12">
+        <div class="form-group mb-2">
+            <select class="form-select form-select-sm ver_reporte" aria-label="Default select example" id="opcion" >
+                <option selected>Seleccione una opción</option>
+                <option value="reporte_clientes_activos">Reporte de clientes con prestamos activos</option>
+                <option value="otro">Reporte de prestamos cancelados</option>
+              </select>
+        </div>
+    </div>
+ 
+</div>
+
+<div class="row mb-2 pb-2 seleccion" style="display: none; background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;" id="reporte_clientes_activos">
+   <div class="col-md-6 mb-2">
+        <a name="" id="" class="" href="/admin/generar-pdf" role="button" style="border: none; background: transparent; text-decoration: none;"><i class="fa-solid fa-file-pdf" style="padding-right: 10px;"></i>PDF</a>
+   </div>
+   <div class="col-md-6">
+        <a name="" id="" class="" href="/admin/generar-excel" role="button" style="border: none; background: transparent; text-decoration: none;"><i class="fa-solid fa-file-excel" style="padding-right: 10px; color: #078718;"></i>EXCEL</a>
+   </div>
+</div>
+<div class="row mb-2 seleccion" style="display: none; background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;" id="otro">
+    otro
+</div>
+
+<script>
+    $(document).ready(function () {
+        $(document).on('change', '#opcion', function(){
+            let formularioSeleccionado = $(this).val();
+            $('.seleccion').hide();
+            $('#' + formularioSeleccionado).show();
+        });
+    })
+</script>
+<%- include('../layouts/footer') %>

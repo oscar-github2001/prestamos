@@ -1,0 +1,333 @@
+<%- include('../layouts/header') %>
+<form  id="formCiudad" method="POST">
+    <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+        <p style="font-weight: 400; color: #000; font-size: 18px;">Agregar ciudad</p>
+        <div class="form-group mb-2">
+            <label for="ciudad" class="form-label mb-2">Ciudad</label>
+            <input type="text" class="form-control form-control-sm" id="ciudad" name="ciudad" placeholder="Digite una ciudad">
+        </div>
+        <div class="form-group mb-2">
+          <label for="departamento" class="form-label">Departamento</label>
+          <select name="departamento" class="form-select form-select-sm" id="departamento" placeholder="Seleccione un departamento" required>
+            <option value="">Seleccione una opción</option>
+            <% for(let i=0; i < departamentos.length; i++) { %>
+                <option value="<%= departamentos[i].iddepartamento %>"><%= departamentos[i].nombre %></option>
+            <% } %>
+          </select>
+        </div>
+        <div class="form-group mb-3">
+            <label for="pais" class="form-label mb-2">País</label>
+            <input type="text" class="form-control form-control-sm" id="pais" name="paises" disabled>
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>   
+    </div>
+</form>
+<div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-6 pt-2 pb-2">
+        <div class="form-group">
+            <select name="fdepartamento" class="form-select form-select-sm" id="fdepartamento">
+                <option value="todo">Todos</option>
+              <% for(let i=0; i < departamentos.length; i++) { %>
+                <option value="<%= departamentos[i].iddepartamento %>"><%= departamentos[i].nombre %></option>
+              <% } %>
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6 pt-2 pb-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+    </div>
+    <di class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm" id="tabla_ciudad" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th scope="col">Ciudad</th>
+                    <th scope="col">País</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody class="table-striped">
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal fade" id="ciudadModal" tabindex="-1" aria-labelledby="ciudadModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="ciudadModalLabel">Actualizar Ciudad</h1>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="actualizar_ciudades">
+                        <div class="mb-3">
+                            <input type="hidden" class="form-control" id="act_idciudad" name="act_idciudad">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="act_idciudad" class="form-label mb-2">Ciudad</label>
+                            <input type="text" class="form-control form-control-sm" id="act_ciudad" name="act_ciudad" placeholder="Digite una ciudad">
+                        </div>
+                        <div class="mb-3">
+                            <label for="act_departamento" class="form-label mb-2">Departamento</label>
+                            <select class="form-control form-control-sm" aria-label="Default select example" id="act_departamento" name="act_departamento"></select>
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-primary">Actualizar</button>
+                        </div>       
+                    </form>
+                </div>
+              </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        cargar_tabla_ciudad();
+        function cargar_tabla_ciudad(){
+            $('#tabla_ciudad').DataTable({
+                columnDefs: [
+                    { "orderable": false, "targets": [2, 3] } 
+                    ],
+                lengthChange: false,
+                info: false,
+                scrollX: true,
+                scrollCollapse: true,
+                ajax: {
+                    url: '/admin/table_city',
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'ciudad',  className: 'text-center'  },
+                    { data: 'pais',  className: 'text-center'  },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.idciudad + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+                    },
+                    className: 'text-center'
+                    },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.idciudad + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                    },
+                    className: 'text-center'
+                    }
+                ],
+                dom: 'lrtip',
+                language: {
+                    search: '',
+                    "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+                },
+            });
+        }
+        
+        $('#buscar').on('keyup', function () {
+            $('#tabla_ciudad').DataTable().search(this.value).draw();
+        });
+
+
+        $(document).on('change', '#fdepartamento', function(){
+            let id = $(this).val();
+            $('#tabla_ciudad').DataTable().destroy();
+            if(id == 'todo'){
+                cargar_tabla_ciudad();
+            }
+            else{
+                $('#tabla_ciudad').DataTable({
+                    columnDefs: [
+                        { "orderable": false, "targets": [2, 3] } 
+                        ],
+                    lengthChange: false,
+                    info: false,
+                    scrollX: true,
+                    scrollCollapse: true,
+                    ajax: {
+                        url: '/admin/table_city/'+id,
+                        dataSrc: ''
+                    },
+                    columns: [
+                        { data: 'ciudad',  className: 'text-center'  },
+                        { data: 'pais',  className: 'text-center'  },
+                        {
+                        data: null,
+                        render: function(data, type, row) {
+                            return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.idciudad + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+                        },
+                        className: 'text-center'
+                        },
+                        {
+                        data: null,
+                        render: function(data, type, row) {
+                            return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.idciudad + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                        },
+                        className: 'text-center'
+                        }
+                    ],
+                    dom: 'lrtip',
+                    language: {
+                        search: '',
+                        "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+                    },
+                });
+            }
+        });
+    });
+    
+    $('#formCiudad').on('submit', function(event) {
+        event.preventDefault();
+        //var mi_select = document.getElementById("departamento");
+        //console.log(mi_select);
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/city',
+            method: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_ciudad').DataTable().ajax.reload();
+                Swal.fire({
+                title: 'Ciudad registrada',
+                text: respuesta.mensaje,
+                icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formCiudad')[0].reset(); 
+                //('#departamento').mySelect.selectedIndex = 0;
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-delete', function() {
+        const id = $(this).data('id');
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '¡Sí, bórralo!',
+            cancelButtonText: 'Cancelar'
+            }).then((resultado) => {
+            if (resultado.isConfirmed) {
+            $.ajax({
+                url: '/admin/delete_city/' + id,
+                method: 'DELETE',
+                success: function(respuesta) {
+                    $('#tabla_ciudad').DataTable().ajax.reload();
+                    Swal.fire(
+                        '¡Eliminado!',
+                        respuesta.mensaje,
+                        'success'
+                    )
+                    console.log(respuesta);
+                },
+                error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+                }
+            });
+            } 
+        });
+    });
+    $('#departamento').change(function() {
+        let id = $(this).val();
+
+        $.ajax({
+        url: '/admin/get_country/'+ id,
+        method: 'GET',
+        success: function(resultado) {
+            $('#formCiudad input[name="paises"]').val(resultado.pais);
+        }
+        });
+    });
+   
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+        url: '/admin/edit_city/' + id,
+        dataType: 'json',
+        method: 'GET',
+        success: function(resultado) {
+            $('#actualizar_ciudades input[name="act_idciudad"]').val(resultado.idciudad);
+            $('#actualizar_ciudades input[name="act_ciudad"]').val(resultado.ciudad);
+            $.ajax({
+                url: '/admin/edit_city_departamentos',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    let combobox = $('select[name="act_departamento"]');
+                    combobox.empty();
+                    $.each(data, function(index, value) {
+                 
+                        if(resultado.iddepartamento == value.iddepartamento){
+                            combobox.append($('<option selected>').text(value.nombre).attr('value', value.iddepartamento));
+                        }
+                        else{
+                            combobox.append($('<option>').text(value.nombre).attr('value', value.iddepartamento));
+
+                        }
+                    });
+                    $('#ciudadModal').modal('show');
+                }
+            });
+        },
+        error: function(err) {
+            console.log(err);
+        }
+        });
+    });
+
+    $('#actualizar_ciudades').on('submit', function(e) {
+        e.preventDefault(); 
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_city',
+            method: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_ciudad').DataTable().ajax.reload();
+                $('#ciudadModal').modal('hide');
+                Swal.fire({
+                title: 'Ciudad Actualizado',
+                text: respuesta.mensaje,
+                icon: 'success'
+                });
+                console.log(respuesta);
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+</script>
+<%- include('../layouts/footer') %>

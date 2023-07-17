@@ -1,0 +1,231 @@
+<%- include('../layouts/header') %>
+<form id="formMoneda">
+    <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+        <div class="col-md-6">
+            <p style="font-weight: 400; color: #000; font-size: 18px;">Ingresar nueva moneda</p>
+            <div class="form-group mb-3 pt-1">
+                <label for="descripcion" class="form-label mb-2">Descripción</label>
+                <input type="text" class="form-control form-control-sm" id="descripcion" name="descripcion" placeholder="Digite una moneda">
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group mb-3">
+                <label for="simbolo" class="form-label mb-2">Símbolo</label>
+                <input type="text" class="form-control  form-control-sm" id="simbolo" name="simbolo" placeholder="Símbolo de la moneda">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-12 pt-2 pb-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+    </div>
+    <di class="col-md-12">
+        <div class="table-responsive">
+          <table class="table table-hover table-sm" id="tabla_moneda" style="width: 100%;">
+            <thead>
+                <tr>
+                    <th scope="col">Descripcion</th>
+                    <th scope="col">Símbolo</th>
+                    <th scope="col"></th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody class="table-striped">
+            </tbody>
+          </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="monedaModal" tabindex="-1" aria-labelledby="monedaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="monedaModalLabel">Actualizar Forma de Pago</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="actualizar_moneda">
+                <div class="mb-3">
+                    <input type="hidden" class="form-control" id="act_idmoneda" name="act_idmoneda">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="act_descripcion" class="form-label mb-2">Descripcion</label>
+                    <input type="text" class="form-control" id="act_descripcion" name="act_descripcion">
+                </div>
+                <div class="form-group mb-3">
+                    <label for="act_simbolo" class="form-label mb-2">Símbolo</label>
+                    <input type="text" class="form-control" id="act_simbolo" name="act_simbolo">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>       
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        $('#tabla_moneda').DataTable({
+            columnDefs: [
+                { "orderable": false, "targets": [2, 3] } 
+                ],
+            lengthChange: false,
+            info: false,
+            scrollX: true,
+            scrollCollapse: true,
+            ajax: {
+                url: '/admin/table_currency',
+                dataSrc: ''
+            },
+            columns: [
+                { data: 'descripcion',  className: 'text-center'  },
+                { data: 'simbolo',  className: 'text-center'  },
+                {
+                data: null,
+                render: function(data, type, row) {
+                    return  '<button style="border:none; background-color: transparent;"  class="btn-delete" data-id="' + data.idmoneda + '"><i class="fa-solid fa-trash-can" style="font-size: 16px; color: red;"></i></button>';
+                },
+                className: 'text-center'
+                },
+                {
+                data: null,
+                render: function(data, type, row) {
+                    return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.idmoneda + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                },
+                className: 'text-center'
+                }
+            ],
+            dom: 'lrtip',
+            language: {
+                search: '',
+                "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+            },
+        });
+    });
+
+    $('#buscar').on('keyup', function () {
+        $('#tabla_moneda').DataTable().search(this.value).draw();
+    });
+
+    $('#formMoneda').on('submit', function(event) {
+        event.preventDefault();
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/currency',
+            method: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_moneda').DataTable().ajax.reload();
+                Swal.fire({
+                    title: 'Moneda registrado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formMoneda')[0].reset();
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+        url: '/admin/edit_currency/' + id,
+        dataType: 'json',
+        type: 'GET',
+        success: function(resultado) {
+            $('#actualizar_moneda input[name="act_idmoneda"]').val(resultado.idmoneda);
+            $('#actualizar_moneda input[name="act_descripcion"]').val(resultado.descripcion);
+            $('#actualizar_moneda input[name="act_simbolo"]').val(resultado.simbolo);
+            $('#monedaModal').modal('show');
+        },
+        error: function(err) {
+            console.log(err);
+        }
+        });
+    });
+    $('#actualizar_moneda').on('submit', function(e) {
+        e.preventDefault(); 
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_currency',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_moneda').DataTable().ajax.reload();
+                $('#monedaModal').modal('hide');
+                Swal.fire({
+                    title: 'Moneda actualizado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);  
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+    $(document).on('click', '.btn-delete', function() {
+        const id = $(this).data('id');
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '¡Sí, bórralo!',
+            cancelButtonText: 'Cancelar'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+            $.ajax({
+                url: '/admin/delete_currency/' + id,
+                method: 'DELETE',
+                success: function(respuesta) {
+                    $('#tabla_moneda').DataTable().ajax.reload();
+                Swal.fire(
+                    '¡Eliminado!',
+                    respuesta.mensaje,
+                    'success'
+                )
+                console.log(respuesta);
+                },
+                error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+                }
+            });
+            }
+        });
+    });
+</script>
+<%- include('../layouts/footer') %>

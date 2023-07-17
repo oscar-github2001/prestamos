@@ -1,0 +1,641 @@
+<%- include('../layouts/header') %>
+<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px;">
+    <div class="col-md-12 pt-2 pb-2">
+        <div id="list-example" class="list-group">
+          <a class="list-group-item list-group-item-action agregar_cliente" href="#principal">Nuevo cliente</a>
+          <a class="list-group-item list-group-item-action agregar_cliente" href="#detalle">Nuevo detalle cliente</a>
+        </div>
+    </div>
+</div>
+<form id="formCliente">
+    <div class="row mb-2 pt-3 pb-2 seleccion" style="background: rgb(255, 255, 255); border-radius: 7px; display: none;" id="principal">
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="nombre" class="form-label">Nombre:</label>
+                <input type="text" class="form-control form-control-sm" id="nombre" name="nombre" autofocus required
+                    placeholder="nombre">
+            </div>
+            <div class="form-group mb-2">
+                <label for="apellido" class="form-label">Apellido:</label>
+                <input type="text" class="form-control form-control-sm" id="apellido" name="apellido" required
+                    placeholder="apellido">
+            </div>
+            <div class="form-group mb-2">
+                <label for="celuda" class="form-label">Cédula:</label>
+                <input type="text" class="form-control form-control-sm" id="cedula" name="cedula" required placeholder="Cédula">
+            </div>
+        
+            <div class="form-group mb-2">
+                <label for="celular" class="form-label">Celular:</label>
+                <input type="text" class="form-control form-control-sm" id="celular" name="celular" required placeholder="Celular">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="direccion" class="form-label">Direccion:</label>
+                <input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required
+                    placeholder="Direccion">
+            </div>
+
+            <div class="form-group mb-2">
+                <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento:</label>
+                <input type="date" class="form-control form-control-sm" id="fecha_nacimiento" name="fecha_nacimiento" required
+                    placeholder="Fecha de Nacimiento">
+            </div>
+            <div class="form-group mb-2">
+                <label for="estado_civil" class="form-label">Estado Civil</label>
+                <input type="text" class="form-control form-control-sm" id="estado_civil" name="estado_civil" required
+                    placeholder="Estado Civil">
+            </div>
+            <div class="form-group mb-2">
+                <label for="sexo" class="form-label">Sexo</label>
+                <div class="form-group">
+                    <input type="radio" name="sexo" id="masculino" value="masculine" class="form-check-input">
+                    <label for="masculino" class="form-check-label">Masculino</label>
+                    <input type="radio" name="sexo" id="femenino" value="femenine" class="form-check-input">
+                    <label for="femenino" class="form-check-label">Femenino</label>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="idciudadFK" class="form-label">Ciudad</label>
+                <select name="idciudadFK" class="form-control form-control-sm" id="idciudadFK" placeholder="Seleccione una Ciudad" required>
+                    <% for(let i=0; i < ciudades.length; i++) { %>
+                        <option>Seleccione una opción</option>
+                        <option value="<%= ciudades[i].idciudad %>"><%= ciudades[i].nombre %></option>
+                        <% } %>
+                </select>
+            </div>
+            <div class="form-group mb-2">
+                <label for="usuario" class="form-label">Correo:</label>
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="usuario" id="usuario">
+                    <span class="input-group-text" id="basic-addon2">@example.com</span>
+                </div>
+            </div>
+            <div class="form-group mb-2">
+                <label for="contrasena" class="form-label">Contraseña</label>
+                <input type="password" class="form-control form-control-sm" id="contrasena" name="contrasena" required
+                    placeholder="Contraseña">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>
+    </div>               
+</form>
+
+<form id="formDetalleCliente">
+    <div class="row mb-2 pt-3 pb-2 seleccion" style="background: rgb(255, 255, 255); border-radius: 7px; display: none;" id="detalle">
+        <div class="col-md-12">
+            <div class="form-group mb-2">
+                <label for="idcliente" class="form-label">Clientes</label>
+                <select name="idcliente" class="form-select form-select-sm" id="idcliente" placeholder="Seleccione una opción" required>
+                    <option>Seleccione una opción</option>
+                    <% for(clientes of clientes) { %>
+                        <option value="<%= clientes.idcliente %>"><%= clientes.nombre %></option>
+                        <% } %>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="ocupacion" class="form-label">Ocupación:</label>
+                <input type="text" class="form-control form-control-sm" id="ocupacion" name="ocupacion" required
+                    placeholder="Ocupación">
+            </div>
+            <div class="form-group mb-2">
+                <label for="trabajo" class="form-label">Lugar de Trabajo</label>
+                <input type="text" class="form-control form-control-sm" id="trabajo" name="trabajo" required
+                    placeholder="Lugar de Trabajo">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="salario" class="form-label">Salario</label>
+                <div class="input-group mb-2">
+                    <span class="input-group-text">$</span>
+                    <input id="salario" name="salario" type="text" class="form-control form-control-sm" aria-label="Amount (to the nearest dollar)">
+                    <span class="input-group-text">.00</span>
+                </div>
+            </div>
+            <div class="form-group mb-2">
+                <label for="telefono_trabajo" class="form-label">Teléfono del Trabajo</label>
+                <input type="text" class="form-control form-control-sm" id="telefono_trabajo" name="telefono_trabajo" required
+                    placeholder="Teléfono del trabajo">
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-2">
+                <label for="fecha_inicio" class="form-label">Fecha de Inicio de Trabajo:</label>
+                <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" required
+                    placeholder="Fecha de Inicio">
+            </div>
+            <div class="form-group mb-2">
+                <label for="fecha_fin" class="form-label">Fecha de Finalización del Trabajo:</label>
+                <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" required
+                    placeholder="Fecha de Fin del Trabajo">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>
+    </div>   
+</form>
+<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding: 10px;">
+    <div class="col-md-6 pt-2 pb-2">
+        <select class="form-select form-select-sm" name="" id="activo">
+            <option value="1">Activo</option>
+            <option value="0">Inactivo</option>
+        </select>
+    </div>
+    <div class="col-md-6 pt-2 pb-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+    </div>
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm" id="tabla_cliente" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th scope="col">Nombre Completo</th>
+                        <th scope="col">Dirección</th>
+                        <th scope="col">Celular</th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody class="table-striped">
+                </tbody>
+            </table>
+            </div>
+    </div>
+</div>
+
+<div class="modal fade" id="cliente_detalleModal" tabindex="-1" aria-labelledby="cliente_detalleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="cliente_detalleModalLabel">Actualizar detalle del cliente</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="actualizar_detalle_cliente">
+                <div class="row">
+                    <div class="col-md-12">
+                        <input type="hidden" name="act_iddetallecliente" >
+                        <div class="form-group mb-2">
+                            <label for="act_idcliente" class="form-label">Cliente</label>
+                            <select name="act_idcliente" class="form-select form-select-sm" id="act_idcliente" placeholder="Seleccione una opción" required>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="act_ocupacion" class="form-label">Ocupación:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_ocupacion" name="act_ocupacion" required
+                                placeholder="Ocupación">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_trabajo" class="form-label">Lugar de Trabajo</label>
+                            <input type="text" class="form-control form-control-sm" id="act_trabajo" name="act_trabajo" required
+                                placeholder="Lugar de Trabajo">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_salario" class="form-label">Salario</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text">$</span>
+                                <input id="act_salario" name="act_salario" type="text" class="form-control form-control-sm" aria-label="Amount (to the nearest dollar)">
+                                <span class="input-group-text">.00</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="act_telefono_trabajo" class="form-label">Teléfono del Trabajo</label>
+                            <input type="text" class="form-control form-control-sm" id="act_telefono_trabajo" name="act_telefono_trabajo" required
+                                placeholder="Teléfono del trabajo">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_fecha_inicio" class="form-label">Fecha de Inicio de Trabajo:</label>
+                            <input type="date" class="form-control form-control-sm" id="act_fecha_inicio" name="act_fecha_inicio" required
+                                placeholder="Fecha de Inicio">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_fecha_fin" class="form-label">Fecha de Finalización del Trabajo:</label>
+                            <input type="date" class="form-control form-control-sm" id="act_fecha_fin" name="act_fecha_fin" required
+                                placeholder="Fecha de Fin del Trabajo">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </div> 
+                </div>    
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
+
+<div class="modal fade" id="clienteModal" tabindex="-1" aria-labelledby="clienteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="clienteModalLabel">Actualizar datos del cliente</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="actualizar_cliente">
+                <div class="row">
+                    <div class="col-md-12">
+                        <input type="hidden" name="act_idcliente">
+                        <div class="form-group mb-2">
+                            <label for="act_nombre" class="form-label">Nombre:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_nombre" name="act_nombre" autofocus required
+                                placeholder="nombre">
+                        </div>  
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="act_apellido" class="form-label">Apellido:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_apellido" name="act_apellido" required
+                                placeholder="apellido">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_cedula" class="form-label">Cédula:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_cedula" name="act_cedula" required placeholder="Cédula">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_celular" class="form-label">Celular:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_celular" name="act_celular" required placeholder="Celular">
+                        </div>
+
+                        <div class="form-group mb-2">
+                            <label for="act_direccion" class="form-label">Direccion:</label>
+                            <input type="text" class="form-control form-control-sm" id="act_direccion" name="act_direccion" required
+                                placeholder="Direccion">
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_fecha_nacimiento" class="form-label">Fecha de Nacimiento:</label>
+                            <input type="date" class="form-control form-control-sm" id="act_fecha_nacimiento" name="act_fecha_nacimiento" required
+                                placeholder="Fecha de Nacimiento">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="act_sexo" class="form-label">Sexo</label>
+                            <div class="form-group">
+                                <input type="radio" name="act_sexo" id="masculino" value="masculine" class="form-check-input">
+                                <label for="masculino" class="form-check-label">Masculino</label>
+                                <input type="radio" name="act_sexo" id="femenino" value="femenine" class="form-check-input">
+                                <label for="femenino" class="form-check-label">Femenino</label>
+                            </div>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_estado_civil" class="form-label">Estado Civil</label>
+                            <input type="text" class="form-control form-control-sm" id="act_estado_civil" name="act_estado_civil" required
+                                placeholder="Estado Civil">
+                        </div> 
+                        <div class="form-group mb-2">
+                            <label for="act_idciudadFK" class="form-label">Ciudad</label>
+                            <select name="act_idciudadFK" class="form-control form-control-sm" id="act_idciudadFK" placeholder="Seleccione una Ciudad" required>
+                            </select>
+                        </div>
+                        <div class="form-group mb-2">
+                            <label for="act_usuario" class="form-label">Correo:</label>
+                            <div class="input-group mb-2">
+                                <input type="text" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="act_usuario" id="act_usuario"">
+                                <span class="input-group-text" id="basic-addon2">@example.com</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </div> 
+                </div>    
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $(document).on('click', '.agregar_cliente', function(){
+            let formularioSeleccionado = $(this).attr('href').substring(1);
+            console.log(formularioSeleccionado)
+            $('.seleccion').hide();
+            $('#' + formularioSeleccionado).show();
+        });
+
+        cargar_cliente(1);
+        function cargar_cliente(estado){
+            $('#tabla_cliente').DataTable({
+                columnDefs: [
+                    { "orderable": false, "targets": [3, 4, 5] } 
+                    ],
+                lengthChange: false,
+                info: false,
+                scrollX: true,
+                scrollCollapse: true,
+                ajax: {
+                    url: '/admin/table_client/'+ estado,
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'nombre_completo',  className: 'text-center'  },
+                    { data: 'direccion',  className: 'text-center'  },
+                    { data: 'celular',  className: 'text-center'  },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        if(data.estado === '1'){
+                            return  `<button style="border:none; background-color: transparent;" class="btn-state" data-id="` + data.idcliente + `"><i class="fa-regular fa-circle-check" style="font-size: 16px; color: slateblue;"></i></button>`;
+                        }
+                        else{
+                            return  `<button style="border:none; background-color: transparent;" class="btn-state" data-id="` + data.idcliente + `"><i class="fa-regular fa-circle-check" style="font-size: 16px; color: red;"></i></button>`;
+                        }
+                    },
+                    className: 'text-center'
+                    },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `<button style="border:none; background-color: transparent;" class="btn-edit" data-id="` + data.idcliente + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                    },
+                    className: 'text-center'
+                    },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        return `<button style="border:none; background-color: #323232; color:#fff; border-radius: 5px;" class="btn-detail" data-id="` + data.idcliente + `">Detalle</button>`;
+                    },
+                    className: 'text-center'
+                    }
+                ],
+                dom: 'lrtip',
+                language: {
+                    search: '',
+                    "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+                },
+            });  
+        }
+
+        $('#buscar').on('keyup', function () {
+            $('#tabla_cliente').DataTable().search(this.value).draw();
+        });
+
+        $(document).on('change', '#activo', function(){
+            let estado = $(this).val();
+            if(estado == 'Activo'){
+                estado=1;
+            }
+            else if(estado == 'Inactivo'){
+                estado=0;
+            }
+            $('#tabla_cliente').DataTable().destroy();
+            cargar_cliente(estado);
+        });
+    });
+    
+    $('#formCliente').on('submit', function(event) {
+        event.preventDefault();
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/client',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_cliente').DataTable().ajax.reload();
+                Swal.fire({
+                    title: 'Cliente registrado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formCliente')[0].reset(); 
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+    $('#formDetalleCliente').on('submit', function(event) {
+        event.preventDefault();
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/client_detail',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                Swal.fire({
+                    title: 'Detalle del cliente registrado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formDetalleCliente')[0].reset(); 
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+        url: '/admin/edit_client/' + id,
+        dataType: 'json',
+        method: 'GET',
+        success: function(resultado) {
+            $('#actualizar_cliente input[name="act_idcliente"]').val(resultado.idcliente);
+            $('#actualizar_cliente input[name="act_nombre"]').val(resultado.nombre);
+            $('#actualizar_cliente input[name="act_apellido"]').val(resultado.apellido);
+            $('#actualizar_cliente input[name="act_cedula"]').val(resultado.cedula);
+            $('#actualizar_cliente input[name="act_celular"]').val(resultado.celular);
+            $('#actualizar_cliente input[name="act_direccion"]').val(resultado.direccion);
+            $('#actualizar_cliente input[name="act_fecha_nacimiento"]').val(resultado.fecha_nacimiento);
+            $('#actualizar_cliente input[name="act_estado_civil"]').val(resultado.estado_civil);
+            $('#actualizar_cliente input[name="act_usuario"]').val(resultado.usuario);
+            if(resultado.sexo === 'm'){
+                $('#actualizar_cliente #masculino').prop('checked', true);
+            }
+            if(resultado.sexo === 'f'){
+                $('#actualizar_cliente #femenino').prop('checked', true);
+            }
+            $.ajax({
+                url: '/admin/edit_client_ciudad',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    let combobox = $('select[name="act_idciudadFK"]');
+                    combobox.empty();
+                    for(value of data){
+                        if(resultado.idciudad == value.idciudad){
+                            combobox.append($('<option selected>').text(value.nombre).attr('value', value.idciudad));
+                        }else{
+                            combobox.append($('<option>').text(value.nombre).attr('value', value.idciudad));
+                        }
+                    }
+                    $('#clienteModal').modal('show');
+                }
+            });
+        },
+        error: function(err) {
+            console.log(err);
+        }
+        });
+    });
+    
+    $('#actualizar_cliente').on('submit', function(e) {
+        e.preventDefault(); 
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_client',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_cliente').DataTable().ajax.reload();
+                $('#clienteModal').modal('hide');
+                Swal.fire({
+                    title: 'Cliente actualizado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);   
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-detail', function() {
+        const id = $(this).data('id');
+        $.ajax({
+        url: '/admin/edit_client_detail/' + id,
+        dataType: 'json',
+        method: 'GET',
+        success: function(resultado) {
+            $('#actualizar_detalle_cliente input[name="act_iddetallecliente"]').val(resultado.iddetallecliente);
+            $('#actualizar_detalle_cliente input[name="act_ocupacion"]').val(resultado.ocupacion);
+            $('#actualizar_detalle_cliente input[name="act_trabajo"]').val(resultado.trabajo);
+            $('#actualizar_detalle_cliente input[name="act_salario"]').val(resultado.salario);
+            $('#actualizar_detalle_cliente input[name="act_telefono_trabajo"]').val(resultado.telefono_trabajo);
+            $('#actualizar_detalle_cliente input[name="act_fecha_inicio"]').val(resultado.fecha_inicio);
+            $('#actualizar_detalle_cliente input[name="act_fecha_fin"]').val(resultado.fecha_fin);
+            $.ajax({
+                url: '/admin/edit_client_detail_nombre',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    let combobox = $('select[name="act_idcliente"]');
+                    combobox.empty();
+                    for(value of data){
+                        if(resultado.idcliente == value.idcliente){
+                            combobox.append($('<option selected>').text(value.nombre).attr('value', value.idcliente));
+                        }else{
+                            combobox.append($('<option>').text(value.nombre).attr('value', value.idcliente));
+                        }
+                    }
+                    $('#cliente_detalleModal').modal('show');
+                }
+            });
+        },
+        error: function(err) {
+            console.log(err);
+        }
+        });
+    });
+
+    $('#actualizar_detalle_cliente').on('submit', function(e) {
+        e.preventDefault(); 
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_client_detail',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#cliente_detalleModal').modal('hide');
+                Swal.fire({
+                    title: 'Detalle del cliente actualizado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);   
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+    $(document).on('click', '.btn-state', function() {
+        let id = $(this).data('id');
+        Swal.fire({
+            title: '¿Quieres actualizar el estado?',
+            text: "¡No podrás revertir esto!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: '¡Sí, actualizar!',
+            cancelButtonText: 'Cancelar'
+        }).then((resultado) => {
+            if (resultado.isConfirmed) {
+                $.ajax({
+                    url: '/admin/update_client_state/' + id,
+                    dataType: 'json',
+                    type: 'POST',
+                    success: function(resultado) {
+                        $('#tabla_cliente').DataTable().ajax.reload();
+                        Swal.fire({
+                            title: 'Estado Actualizado',
+                            text: resultado.mensaje,
+                            icon: 'success'
+                        });
+                        console.log(resultado);
+                        },
+                    error: function(error) {
+                        Swal.fire({
+                            title: 'Error',
+                            text:  error.responseJSON.mensaje,
+                            icon: 'error'
+                        });
+                    }
+                });
+            }
+        });
+    });
+</script>
+<%- include('../layouts/footer') %>

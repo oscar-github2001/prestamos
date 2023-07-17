@@ -1,0 +1,499 @@
+<%- include('../layouts/header') %>
+<form id="formPrestamo">    
+    <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+        <p style="font-weight: 400; color: #000; font-size: 18px;">Registrar préstamo</p>
+        <div class="col-md-12">
+            <div class="form-group mb-3">
+                <label for="cliente" class="form-label">Cliente</label>
+                <select name="cliente" class="form-select form-select-sm" id="cliente" placeholder="Seleccione una opción" required>
+                  <option value="">Seleccione una opción</option>
+                  <% for(let i=0; i < clientes.length; i++) { %>
+                    <option value="<%= clientes[i].idcliente %>"><%= clientes[i].nombre %></option>
+                  <% } %>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="tipoprestamo" class="form-label">Tipo de Préstamo</label>
+                <select name="tipoprestamo" class="form-select form-select-sm" id="tipoprestamo" placeholder="Seleccione una opción" required>
+                <option value="">Seleccione una opción</option>
+                <% for(let i=0; i < tipoprestamo.length; i++) { %>
+                    <option value="<%= tipoprestamo[i].idtipoprestamo %>"><%= tipoprestamo[i].descripcion %></option>
+                <% } %>
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label for="moneda" class="form-label">Tipo de Moneda</label>
+                <select name="moneda" class="form-select form-select-sm" id="moneda" placeholder="Seleccione una opción" required>
+                <option value="">Seleccione una opción</option>
+                <% for(let i=0; i < moneda.length; i++) { %>
+                    <option value="<%= moneda[i].idmoneda %>"><%= moneda[i].descripcion %></option>
+                <% } %>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="formapago" class="form-label">Forma de pago</label>
+                <select name="formapago" class="form-control form-control-sm" id="formapago" placeholder="Seleccione una opción" required disabled>
+                <% for(let i=0; i < formapago.length; i++) { %>
+                    <% if(formapago[i].descripcion == 'Mensual') { %>
+                        <option value="<%= formapago[i].idformapago %>" selected><%= formapago[i].descripcion %></option>
+                    <% } else { %>
+                        <option value="<%= formapago[i].idformapago %>"><%= formapago[i].descripcion %></option>
+                    <% } %>
+                <% } %>
+                </select>
+            </div>
+            <div class="form-group mb-3">
+                <label for="interes" class="form-label">Taza de interés</label>
+                <select name="interes" class="form-select form-select-sm" id="interes" placeholder="Seleccione una opción" required>
+                <option value="">Seleccione una opción</option>
+                <% for(let i=0; i < intereses.length; i++) { %>
+                    <option value="<%= intereses[i].idinteres %>"><%= intereses[i].descripcion %></option>
+                <% } %>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="monto" class="form-label mb-2">Monto</label>
+                <input type="text" class="form-control form-control-sm" id="monto" name="monto" placeholder="Monto a Prestar">
+            </div>
+            <div class="form-group mb-3">
+                <label for="plazo" class="form-label mb-2">Plazo</label>
+                <input type="number" class="form-control form-control-sm" id="plazo" name="plazo" placeholder="Plazo en Meses">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="mb-2">
+                <button type="submit" class="submit">Agregar</button>
+            </div>
+        </div>
+    </div>
+</form>
+<div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-12 pt-2 pb-2">
+        <input type="text" id="buscar" placeholder="Buscar..." class="form-control form-control-sm mb-2">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm" id="tabla_prestamo" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th scope="col">Código</th>
+                        <th scope="col">Tipo de Préstamo</th>
+                        <th scope="col">Cliente</th>
+                        <th scope="col">Plazo</th>
+                        <th scope="col">Fecha Desembolso</th>
+                        <th scope="col">Fecha Inicio</th>
+                        <th scope="col">Fecha Fin</th>
+                        <th scope="col">Capital</th>
+                        <th scope="col">Intereses</th>
+                        <th scope="col">Saldo pendiente</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody class="table-striped">
+                </tbody>
+            </table>
+        </div>
+    </div> 
+</div> 
+  <!-- Modal -->
+<div class="modal fade" id="prestamoModal" tabindex="-1" aria-labelledby="prestamoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="prestamoModalLabel">Cuotas</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="form_detalle_prestamo" class="mb-4">
+                    <div class="row">
+                        <div class=" col-md-12">
+                            <center><label for="" id="det_prestamo_cancelado" style="font-weight: 500;  font-size: 18px; display: none;">Prestamo cancelado</label></center>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="det_cliente" class="form-label mb-1" style="font-size: 13px;">Cliente</label>
+                                <input type="text" id="det_cliente" name="det_cliente" value="" disabled class="form-control form-control-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="det_fecha_inicio" class="form-label mb-1" style="font-size: 13px;">Fecha inicial</label>
+                                <input type="text" id="det_fecha_inicio" name="det_fecha_inicio" value="" disabled class="form-control form-control-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="det_fecha_fin" class="form-label mb-1" style="font-size: 13px;">Fecha final</label>
+                                <input type="text" name="det_fecha_fin"  disabled class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="det_monto" class="form-label mb-1" style="font-size: 13px;">Monto</label>
+                                <input type="text" name="det_monto" value="" disabled class="form-control form-control-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="det_plazo" class="form-label mb-1" style="font-size: 13px;">Plazo en Meses</label>
+                                <input type="text" name="det_plazo"  disabled class="form-control form-control-sm">
+                            </div>
+                            <div class="form-group">
+                                <label for="det_interes" class="form-label mb-1" style="font-size: 13px;">Tasa Interes X Mora</label>
+                                <input type="text" name="det_interes" disabled class="form-control form-control-sm">
+                            </div>
+
+                        </div>
+                    </div>
+                </form>
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm" id="tabla_cuota">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th scope="col" style="font-size: 12px;">Cuota</th>
+                                <th scope="col" style="font-size: 12px;">Fecha</th>
+                                <th scope="col" style="font-size: 12px;">Principal</th>
+                                <th scope="col" style="font-size: 12px;">Intereses</th>
+                                <th scope="col" style="font-size: 12px;">Monto Cuota</th>
+                                <th scope="col" style="font-size: 12px;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="table-striped">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function() {
+        $(document).ajaxStart(function() {
+            $('#loading-screen').show();
+        });
+        $(document).ajaxStop(function() {
+            $('#loading-screen').hide();
+        });
+        cargar_tabla_prestamo();
+        function cargar_tabla_prestamo(){
+            $('#tabla_prestamo').DataTable({
+                columnDefs: [
+                    { "orderable": false, "targets": [10] } 
+                    ],
+                lengthChange: false,
+                info: false,
+                scrollX: true,
+                scrollCollapse: true,
+                ajax: {
+                    url: '/admin/table_loan',
+                    dataSrc: ''
+                },
+                columns: [
+                    { data: 'codigo',  className: 'text-center'  },
+                    { data: 'tipoprestamo',  className: 'text-center'  },
+                    { data: 'cliente',  className: 'text-center'  },
+                    { data: 'plazo',  className: 'text-center'  },
+                    { data: 'fecha_registro_formateada',  className: 'text-center'  },
+                    { data: 'fecha_inicio',  className: 'text-center'  },
+                    { data: 'fecha_fin',  className: 'text-center'  },
+                    { data: 'monto',  className: 'text-center'  },
+                    { data: 'intereses',  className: 'text-center'  },
+                    { data: 'saldo_pendiente',  className: 'text-center'  },
+                    {
+                    data: null,
+                    render: function(data, type, row) {
+                        return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                    },
+                    className: 'text-center'
+                    }
+                ],       
+                dom: 'Blrtip',
+                buttons:[ 
+                    {
+                        extend:    'excelHtml5',
+                        text:      '<i class="fas fa-file-excel" style="color:#00992b"></i> ',
+                        titleAttr: 'Exportar a Excel',
+                        className: 'btn btn-dark btn-custom'
+                    },
+                    {
+                        extend:    'pdfHtml5',
+                        text:      '<i class="fas fa-file-pdf" style="color:#e8786f"></i> ',
+                        titleAttr: 'Exportar a PDF',
+                        className: 'btn btn-dark btn-custom'
+                    },
+                    {
+                        extend:    'print',
+                        text:      '<i class="fa fa-print" style="color:#046da3"></i> ',
+                        titleAttr: 'Imprimir',
+                        className: 'btn btn-dark btn-custom'
+                    },
+
+                    {
+                        text: '<select id="fprestamo" style="border: none;  outline: none;"><option value="todo">Seleccione una opción</option><option value="todo">Todos</option><option value="1">Pendiente</option><option value="0">Cancelado</option></select>',
+                        className: 'btn btn-dark btn-custom',
+                        action: function (e, dt, node, config) {
+                            var format = $('#fprestamo').val();
+                            dt.button(node).trigger();
+                        }
+                    }
+                ],
+                initComplete: function () {
+                    setTimeout(function () {
+                        var buttonContainer = document.querySelector('.dt-buttons');
+                        var tableWrapper = document.querySelector('.dataTables_wrapper');
+
+                        if (buttonContainer && tableWrapper) {
+                            buttonContainer.style.marginLeft = 'auto';
+                            buttonContainer.style.marginRight = 'auto';
+
+                            tableWrapper.style.textAlign = 'center';
+                        }
+                    }, 0);
+                },
+                language: {
+                    search: '',
+                    "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+                },
+            });
+        }
+        $(document).on('change', '#fprestamo', function(){
+            let id = $(this).val();
+            $('#tabla_prestamo').DataTable().destroy();
+            if(id == 'todo'){
+                cargar_tabla_prestamo();
+            }
+            else{
+                $('#tabla_prestamo').DataTable({
+                    columnDefs: [
+                        { "orderable": false, "targets": [9] } 
+                        ],
+                    lengthChange: false,
+                    info: false,
+                    scrollX: true,
+                    scrollCollapse: true,
+                    ajax: {
+                        url: '/admin/table_loan/'+id,
+                        dataSrc: ''
+                    },
+                    columns: [
+                        { data: 'codigo',  className: 'text-center'  },
+                        { data: 'tipoprestamo',  className: 'text-center'  },
+                        { data: 'cliente',  className: 'text-center'  },
+                        { data: 'plazo',  className: 'text-center'  },
+                        { data: 'fecha_registro_formateada',  className: 'text-center'  },
+                        { data: 'fecha_inicio',  className: 'text-center'  },
+                        { data: 'fecha_fin',  className: 'text-center'  },
+                        { data: 'monto',  className: 'text-center'  },
+                        { data: 'intereses',  className: 'text-center'  },
+                        { data: 'saldo_pendiente',  className: 'text-center'  },
+                        {
+                        data: null,
+                        render: function(data, type, row) {
+                            return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                        },
+                        className: 'text-center'
+                        }
+                    ],       
+                    dom: 'Blrtip',
+                    buttons:[ 
+                        {
+                            extend:    'excelHtml5',
+                            text:      '<i class="fas fa-file-excel" style="color:#00992b"></i> ',
+                            titleAttr: 'Exportar a Excel',
+                            className: 'btn btn-dark btn-custom'
+                        },
+                        {
+                            extend:    'pdfHtml5',
+                            text:      '<i class="fas fa-file-pdf" style="color:#e8786f"></i> ',
+                            titleAttr: 'Exportar a PDF',
+                            className: 'btn btn-dark btn-custom'
+                        },
+                        {
+                            extend:    'print',
+                            text:      '<i class="fa fa-print" style="color:#046da3"></i> ',
+                            titleAttr: 'Imprimir',
+                            className: 'btn btn-dark btn-custom'
+                        },
+
+                        {
+                            text: '<select id="fprestamo" style="border: none;  outline: none;"><option value="todo">Seleccione una opción</option><option value="todo">Todos</option><option value="1">Pendiente</option><option value="0">Cancelado</option></select>',
+                            className: 'btn btn-dark btn-custom',
+                            action: function (e, dt, node, config) {
+                                var format = $('#fprestamo').val();
+                                dt.button(node).trigger();
+                            }
+                        }
+                    ],
+                    initComplete: function () {
+                        setTimeout(function () {
+                            var buttonContainer = document.querySelector('.dt-buttons');
+                            var tableWrapper = document.querySelector('.dataTables_wrapper');
+
+                            if (buttonContainer && tableWrapper) {
+                                buttonContainer.style.marginLeft = 'auto';
+                                buttonContainer.style.marginRight = 'auto';
+
+                                tableWrapper.style.textAlign = 'center';
+                            }
+                        }, 0);
+                    },
+                    language: {
+                        search: '',
+                        "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
+                    },
+                });
+            }
+        });
+    });
+
+    $('#tabla_prestamo .dataTables_filter').hide();
+    $('#formPrestamo').on('submit', function(event) {
+        event.preventDefault();
+        let datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/loan',
+            type: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                $('#tabla_prestamo').DataTable().ajax.reload();
+                Swal.fire({
+                    title: 'Prestamo registrado',
+                    text: respuesta.mensaje,
+                    icon: 'success'
+                });
+                console.log(respuesta);
+                $('#formPrestamo')[0].reset(); 
+            },
+            error: function(error) {
+                Swal.fire({
+                title: 'Error',
+                text:  error.responseJSON.mensaje,
+                icon: 'error'
+                });
+                console.log(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.btn-edit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+            url: '/admin/get_quota/' + id,
+            dataType: 'json',
+            type: 'GET',
+            success: function(respuesta) {
+                if(respuesta.detalle_resultado[0].estado === '0'){
+                    let det_prestamo_cancelado = document.getElementById("det_prestamo_cancelado");
+                    det_prestamo_cancelado.style.display = "block";
+                }
+                else{
+                    let det_prestamo_cancelado = document.getElementById("det_prestamo_cancelado");
+                    det_prestamo_cancelado.style.display = "none";
+                }
+                $('#prestamoModal').modal('show');
+                $('#form_detalle_prestamo input[name="det_cliente"]').val(respuesta.detalle_resultado[0].cliente);
+                $('#form_detalle_prestamo input[name="det_fecha_inicio"]').val(respuesta.detalle_resultado[0].fecha_inicio);
+                $('#form_detalle_prestamo input[name="det_fecha_fin"]').val(respuesta.detalle_resultado[0].fecha_fin);
+                $('#form_detalle_prestamo input[name="det_monto"]').val(respuesta.detalle_resultado[0].monto);
+                $('#form_detalle_prestamo input[name="det_plazo"]').val(respuesta.detalle_resultado[0].plazo);
+                $('#form_detalle_prestamo input[name="det_interes"]').val(respuesta.detalle_resultado[0].interes);
+                $('#tabla_cuota tbody tr').empty();
+                for (let i = 0; i < respuesta.resultado.length; i++) { 
+                    let item = respuesta.resultado[i];
+                    let html = '<tr style="text-align: center;  font-size: 12px;">'; 
+                    html += '<td><button style="line-height: 1.2; background: #0096d2; color:#fff; text-align: center; font-weight: 600; border:none;  border-radius: 10px; width: 17px; height:17px;" class="details-control" data-idcuota="' + item.idcuota + '">+</button></td>';
+                    html += '<td>' + item.cuota + '</td>';
+                    html += '<td>' + item.fecha_pago + '</td>';
+                    html += '<td>' + item.capital + '</td>';
+                    html += '<td>' + item.interescorriente + '</td>';
+                    html += '<td>' + item.abono + '</td>';
+                    if(item.estado === 'Pendiente'){
+                        html += '<td><p style="background-color: #FFD700; color: white; border-radius: 5px;">' + item.estado + '</p></td>';
+                    }
+                    else if(item.estado === 'Cancelado'){
+                        html += '<td><p style="background-color: #008F39; color: white; border-radius: 5px;">' + item.estado + '</p></td>';
+                    }
+                    else if(item.estado === 'Parcial'){
+                        html += '<td><p style="background-color:#4C2882; color: white; border-radius: 5px;">' + item.estado + '</p></td>';
+                    }
+                    else{
+                        html += '<td><p style="background-color: #931323; color: white; border-radius: 5px;">' + item.estado + '</p></td>';
+                    }
+                    html += '</tr>';
+                    $('#tabla_cuota').append(html);
+
+                    // Agregar fila de detalles vacía
+                    let detailsRow = $('<tr class="details-row"><td colspan="8"></td></tr>');
+                    $('#tabla_cuota').append(detailsRow);
+                }
+                // Agregar última fila
+                let lastRowHtml = '<tr class="last-row" style="text-align: center;">';
+                lastRowHtml += '<td colspan="3">Total</td>';
+                lastRowHtml += '<td>' + respuesta.detalle_resultado[0].capital + '</td>';
+                lastRowHtml += '<td>' + respuesta.detalle_resultado[0].interescorriente + '</td>';
+                lastRowHtml += '<td>' + respuesta.detalle_resultado[0].abono + '</td>';
+                lastRowHtml += '<td colspan="2"></td>';
+                lastRowHtml += '</tr>';
+                $('#tabla_cuota').append(lastRowHtml);
+                // Aplicar estilo a la última fila
+                $('#prestamoModal .table-responsive #tabla_cuota tr.last-row').css('background-color', '#00825a !important');
+            },
+            error: function(error) {
+                console.log(error);
+            }
+        });
+    });
+
+    $('#tabla_cuota').on('click', '.details-control', function() {
+        let id = $(this).data('idcuota');
+        let row = $(this).closest('tr');
+        let detailsRow = row.next('.details-row');
+        if (detailsRow.is(':visible')) {
+            // Si la fila de detalles ya está visible, ocultarla y cambiar el ícono a "+"
+            detailsRow.hide();
+            $(this).text('+');
+        } else {
+            // Si la fila de detalles está oculta, mostrarla y cambiar el ícono a "-"
+            detailsRow.show();
+            $(this).text('-');
+            $.ajax({
+                url: '/admin/sum_payment/' + id,
+                type: 'GET',
+                dataType: 'json',
+                success: function(details) {
+                     // Mostrar los detalles en la fila de detalles
+                    let detailsCell = detailsRow.find('td');
+                    let html = '';
+                    if(details.obtener_pago.length > 0){
+                        html = '<strong style="margin-right: 200px; font-weight: 600;">Fecha:</strong>'+'<strong style="font-weight: 600;">Monto:</strong>';
+                        for (let i = 0; i < details.obtener_pago.length; i++) { 
+                            let item = details.obtener_pago[i];
+                            html += '<br> <p style="width:5px; margin-right: 10px;  display: inline-block; font-weight: 600;">'+ (i+1) + '.</p >' + '<p style="width:200px; margin-right: 30px;  display: inline-block;">'+ item.fecha_pago + '</p >' + '<p style="display: inline-block;">' + item.pago + '</p>';
+                        }
+                        html += '<div style="  border-bottom: 1px solid #ccc;"></div>' 
+                        html += '<br> <p style="width:200px; margin-right: 45px;  display: inline-block; font-weight: 600;">Total</p >' + '<p style="display: inline-block;">' + details.total[0].pago + '</p>' ;
+                        if(details.total[0].estado === 'Parcial'){
+                            html += '<br> <p style="width:200px; margin-right: 45px; display: inline-block; font-weight: 600;">Saldo pendiente</p >' + '<p style="display: inline-block;">' + details.total[0].pendiente + '</p>' ;
+
+                        }
+                    }
+                    html += '<br> <p style="width:200px; margin-right: 45px;  display: inline-block; font-weight: 600;">Estado</p >' + '<p style="display: inline-block;">' + details.total[0].estado + '</p>' ;
+                    detailsCell.html(html);
+                },
+                error: function(error){
+                    console.log(error);
+
+                }
+            });
+        }
+    });
+
+    $('#buscar').on('keyup', function () {
+        $('#tabla_prestamo').DataTable().search(this.value).draw();
+    });
+</script>
+
+<%- include('../layouts/footer') %>
