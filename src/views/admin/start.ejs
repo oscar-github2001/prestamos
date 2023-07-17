@@ -18,7 +18,7 @@
                     text: 'Ganancias Mensuales'
                 },
                 xAxis: {
-                    categories: data.ganancia_mes_dolar.map(item => item.año_mes)
+                    categories: data.ganancia_mes.map(item => item.año_mes)
                 },
                 yAxis: {
                     title: {
@@ -26,12 +26,12 @@
                     }
                 },
                 series: [{
-                    name: 'Córdobas',
-                    data: data.ganancia_mes_cordoba.map(item => item.ganancia_mes)   
+                    name: 'Dólares',
+                    data: data.ganancia_mes.map(item => item.ganancia_mes_dolar) ,
                 },
                 {
-                    name: 'Dólares',
-                    data: data.ganancia_mes_dolar.map(item => item.ganancia_mes)
+                    name: 'Córdobas',
+                    data: data.ganancia_mes.map(item => item.ganancia_mes_cordoba)
                 }]
             };
             const chart = new Highcharts.Chart(chartConfig);

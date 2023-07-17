@@ -2,7 +2,7 @@
 <form id="formPrestamo">    
     <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
         <p style="font-weight: 400; color: #000; font-size: 18px;">Registrar préstamo</p>
-        <div class="col-md-12">
+        <div class="col-md-8">
             <div class="form-group mb-3">
                 <label for="cliente" class="form-label">Cliente</label>
                 <select name="cliente" class="form-select form-select-sm" id="cliente" placeholder="Seleccione una opción" required>
@@ -11,6 +11,12 @@
                     <option value="<%= clientes[i].idcliente %>"><%= clientes[i].nombre %></option>
                   <% } %>
                 </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group mb-3">
+                <label for="fecha_registro" class="form-label mb-2">Fecha desembolso</label>
+                <input type="date" class="form-control form-control-sm" id="fecha_registro" name="fecha_registro" >
             </div>
         </div>
         <div class="col-md-4">
@@ -74,8 +80,17 @@
     </div>
 </form>
 <div class="row mb-2 pb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-6 pt-2 pb-2">
+        <select class="form-select form-select-sm" name="" id="fprestamo">
+            <option value="todo">Seleccione una opción</option>
+            <option value="todo">Todos</option><option value="1">Pendiente</option>
+            <option value="0">Cancelado</option>
+        </select>
+    </div>
+    <div class="col-md-6 pt-2 pb-2">
+        <input type="text" class="form-control form-control-sm" placeholder="Buscar" id="buscar">
+    </div>
     <div class="col-md-12 pt-2 pb-2">
-        <input type="text" id="buscar" placeholder="Buscar..." class="form-control form-control-sm mb-2">
         <div class="table-responsive">
             <table class="table table-hover table-sm" id="tabla_prestamo" style="width: 100%;">
                 <thead>
@@ -209,49 +224,7 @@
                     className: 'text-center'
                     }
                 ],       
-                dom: 'Blrtip',
-                buttons:[ 
-                    {
-                        extend:    'excelHtml5',
-                        text:      '<i class="fas fa-file-excel" style="color:#00992b"></i> ',
-                        titleAttr: 'Exportar a Excel',
-                        className: 'btn btn-dark btn-custom'
-                    },
-                    {
-                        extend:    'pdfHtml5',
-                        text:      '<i class="fas fa-file-pdf" style="color:#e8786f"></i> ',
-                        titleAttr: 'Exportar a PDF',
-                        className: 'btn btn-dark btn-custom'
-                    },
-                    {
-                        extend:    'print',
-                        text:      '<i class="fa fa-print" style="color:#046da3"></i> ',
-                        titleAttr: 'Imprimir',
-                        className: 'btn btn-dark btn-custom'
-                    },
-
-                    {
-                        text: '<select id="fprestamo" style="border: none;  outline: none;"><option value="todo">Seleccione una opción</option><option value="todo">Todos</option><option value="1">Pendiente</option><option value="0">Cancelado</option></select>',
-                        className: 'btn btn-dark btn-custom',
-                        action: function (e, dt, node, config) {
-                            var format = $('#fprestamo').val();
-                            dt.button(node).trigger();
-                        }
-                    }
-                ],
-                initComplete: function () {
-                    setTimeout(function () {
-                        var buttonContainer = document.querySelector('.dt-buttons');
-                        var tableWrapper = document.querySelector('.dataTables_wrapper');
-
-                        if (buttonContainer && tableWrapper) {
-                            buttonContainer.style.marginLeft = 'auto';
-                            buttonContainer.style.marginRight = 'auto';
-
-                            tableWrapper.style.textAlign = 'center';
-                        }
-                    }, 0);
-                },
+                dom: 'lrtip',
                 language: {
                     search: '',
                     "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"
@@ -296,49 +269,7 @@
                         className: 'text-center'
                         }
                     ],       
-                    dom: 'Blrtip',
-                    buttons:[ 
-                        {
-                            extend:    'excelHtml5',
-                            text:      '<i class="fas fa-file-excel" style="color:#00992b"></i> ',
-                            titleAttr: 'Exportar a Excel',
-                            className: 'btn btn-dark btn-custom'
-                        },
-                        {
-                            extend:    'pdfHtml5',
-                            text:      '<i class="fas fa-file-pdf" style="color:#e8786f"></i> ',
-                            titleAttr: 'Exportar a PDF',
-                            className: 'btn btn-dark btn-custom'
-                        },
-                        {
-                            extend:    'print',
-                            text:      '<i class="fa fa-print" style="color:#046da3"></i> ',
-                            titleAttr: 'Imprimir',
-                            className: 'btn btn-dark btn-custom'
-                        },
-
-                        {
-                            text: '<select id="fprestamo" style="border: none;  outline: none;"><option value="todo">Seleccione una opción</option><option value="todo">Todos</option><option value="1">Pendiente</option><option value="0">Cancelado</option></select>',
-                            className: 'btn btn-dark btn-custom',
-                            action: function (e, dt, node, config) {
-                                var format = $('#fprestamo').val();
-                                dt.button(node).trigger();
-                            }
-                        }
-                    ],
-                    initComplete: function () {
-                        setTimeout(function () {
-                            var buttonContainer = document.querySelector('.dt-buttons');
-                            var tableWrapper = document.querySelector('.dataTables_wrapper');
-
-                            if (buttonContainer && tableWrapper) {
-                                buttonContainer.style.marginLeft = 'auto';
-                                buttonContainer.style.marginRight = 'auto';
-
-                                tableWrapper.style.textAlign = 'center';
-                            }
-                        }, 0);
-                    },
+                    dom: 'lrtip',
                     language: {
                         search: '',
                         "url": "//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/Spanish.json"

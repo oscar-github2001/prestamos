@@ -1006,6 +1006,7 @@ router.post('/loan', async(req, res) => {
     const monto = parseFloat(req.body.monto);
     const idusuarioFK = req.session.userId;
     const moneda = req.body.moneda;
+    const fecha_desembolso = req.body.fecha_registro;
     let codigo = await pool.query('SELECT MAX(idprestamo + 1) AS idprestamo FROM tblprestamos');
     const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [interes]);
     if(codigo[0].idprestamo == null){
@@ -1041,8 +1042,9 @@ router.post('/loan', async(req, res) => {
             monto, 
             plazo,
             intereses,
-            idmonedaFK) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+            idmonedaFK,
+            fecha_registro) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
             codigo, 
             tipoprestamo, 
             cliente, 
@@ -1052,7 +1054,8 @@ router.post('/loan', async(req, res) => {
             monto, 
             plazo,
             sumainterescorriente,
-            moneda ]);
+            moneda,
+            fecha_desembolso ]);
         const fecha_registro =  await pool.query (`SELECT fecha_registro FROM tblprestamos WHERE idprestamo = ?`, [insertar_prestamo.insertId]);
         fecha_pago = fecha_registro[0].fecha_registro;
    
@@ -1539,7 +1542,7 @@ router.post("/payments_quotas", async (req, res) => {
   
 router.get('/graph_loan', async(req, res) => {
     try {
-        const ganancia_mes_dolar = await pool.query(`
+        const ganancia_mes = await pool.query(`
         SELECT 
             CONCAT(YEAR(C.fecha_pago), '-', 
             CASE MONTH(C.fecha_pago)
@@ -1556,43 +1559,14 @@ router.get('/graph_loan', async(req, res) => {
             WHEN 11 THEN 'Noviembre'
             WHEN 12 THEN 'Diciembre'
             END) AS año_mes,
-        M.simbolo AS tipo_moneda,
-        SUM(P.intereses / P.plazo) AS ganancia_mes
+        ROUND(SUM(CASE WHEN M.simbolo = 'C$' THEN P.intereses / P.plazo ELSE 0 END), 3)AS ganancia_mes_cordoba,
+        ROUND(SUM(CASE WHEN M.simbolo = '$' THEN P.intereses / P.plazo ELSE 0 END), 3) AS ganancia_mes_dolar
         FROM tblprestamos AS P 
-        INNER JOIN tblmoneda AS M
-        ON P.idmonedaFK = M.idmoneda
-        INNER JOIN tblcuotas AS C 
-        ON P.idprestamo = C.idprestamoFK
-        WHERE M.simbolo = '$'
-        GROUP BY año_mes
-        ORDER BY C.fecha_pago ASC`);
-        const ganancia_mes_cordoba = await pool.query(`
-        SELECT 
-            CONCAT(YEAR(C.fecha_pago), '-', 
-            CASE MONTH(C.fecha_pago)
-            WHEN 1 THEN 'Enero'
-            WHEN 2 THEN 'Febrero'
-            WHEN 3 THEN 'Marzo'
-            WHEN 4 THEN 'Abril'
-            WHEN 5 THEN 'Mayo'
-            WHEN 6 THEN 'Junio'
-            WHEN 7 THEN 'Julio'
-            WHEN 8 THEN 'Agosto'
-            WHEN 9 THEN 'Septiembre'
-            WHEN 10 THEN 'Octubre'
-            WHEN 11 THEN 'Noviembre'
-            WHEN 12 THEN 'Diciembre'
-            END) AS año_mes,
-        M.simbolo AS tipo_moneda,
-        SUM(P.intereses / P.plazo) AS ganancia_mes
-        FROM tblprestamos AS P 
-        INNER JOIN tblmoneda AS M
-        ON P.idmonedaFK = M.idmoneda
-        INNER JOIN tblcuotas AS C 
-        ON P.idprestamo = C.idprestamoFK
-        WHERE M.simbolo = 'C$'
-        GROUP BY año_mes
-        ORDER BY C.fecha_pago ASC`);
+        INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
+        INNER JOIN tblcuotas AS C ON P.idprestamo = C.idprestamoFK
+        GROUP BY YEAR(C.fecha_pago), MONTH(C.fecha_pago)
+        ORDER BY C.fecha_pago ASC;`);
+      
         const monto_prestado_mes = await pool.query(`
             SELECT 
                 CONCAT(YEAR(fecha_registro), '-', 
@@ -1617,7 +1591,7 @@ router.get('/graph_loan', async(req, res) => {
             ON P.idmonedaFK = M.idmoneda
             WHERE M.simbolo = '$'
             GROUP BY año_mes`);
-        res.json({ganancia_mes_dolar, ganancia_mes_cordoba, monto_prestado_mes});   
+        res.json({ganancia_mes, monto_prestado_mes});   
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al obtener los datos' });

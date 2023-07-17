@@ -60,11 +60,11 @@
         <div class="col-md-4">
             <div class="form-group mb-2">
                 <label for="idciudadFK" class="form-label">Ciudad</label>
-                <select name="idciudadFK" class="form-control form-control-sm" id="idciudadFK" placeholder="Seleccione una Ciudad" required>
+                <select name="idciudadFK" class="form-control form-control-sm" id="idciudadFK" required>
+                    <option>Seleccione una opción</option>
                     <% for(let i=0; i < ciudades.length; i++) { %>
-                        <option>Seleccione una opción</option>
                         <option value="<%= ciudades[i].idciudad %>"><%= ciudades[i].nombre %></option>
-                        <% } %>
+                    <% } %>
                 </select>
             </div>
             <div class="form-group mb-2">
@@ -93,11 +93,11 @@
         <div class="col-md-12">
             <div class="form-group mb-2">
                 <label for="idcliente" class="form-label">Clientes</label>
-                <select name="idcliente" class="form-select form-select-sm" id="idcliente" placeholder="Seleccione una opción" required>
+                <select name="idcliente" class="form-select form-select-sm" id="idcliente" required>
                     <option>Seleccione una opción</option>
                     <% for(clientes of clientes) { %>
-                        <option value="<%= clientes.idcliente %>"><%= clientes.nombre %></option>
-                        <% } %>
+                    <option value="<%= clientes.idcliente %>"><%= clientes.nombre %></option>
+                    <% } %>
                 </select>
             </div>
         </div>
