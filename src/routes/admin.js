@@ -7,8 +7,18 @@ const passwordValidation = require('../lib/passwordValidation');
 const e = require('connect-flash');
 const { jsPDF } = require('jspdf');
 
-router.get('/', isLoggedIn, (req, res) => {
-    res.render('admin/start');
+router.get('/', isLoggedIn, async(req, res) => {
+    await pool.query(`
+    SELECT 
+        DISTINCT YEAR(C.fecha_pago) AS fecha
+    FROM tblprestamos AS P INNER JOIN tblcuotas AS C
+    ON P.idprestamo = C.idprestamoFK
+    ORDER BY fecha ASC`, (error, resultado) => {
+        if(error){
+            console.log(error);
+        }
+        res.render('admin/start', {resultado});
+    });
 });
 
 //Clientes
@@ -1540,57 +1550,60 @@ router.post("/payments_quotas", async (req, res) => {
     }
 });
   
-router.get('/graph_loan', async(req, res) => {
+router.get('/graph_loan/:fecha', async(req, res) => {
     try {
+        const fecha = req.params.fecha;
+        console.log(fecha)
         const ganancia_mes = await pool.query(`
         SELECT 
             CONCAT(YEAR(C.fecha_pago), '-', 
             CASE MONTH(C.fecha_pago)
-            WHEN 1 THEN 'Enero'
-            WHEN 2 THEN 'Febrero'
-            WHEN 3 THEN 'Marzo'
-            WHEN 4 THEN 'Abril'
-            WHEN 5 THEN 'Mayo'
-            WHEN 6 THEN 'Junio'
-            WHEN 7 THEN 'Julio'
-            WHEN 8 THEN 'Agosto'
-            WHEN 9 THEN 'Septiembre'
-            WHEN 10 THEN 'Octubre'
-            WHEN 11 THEN 'Noviembre'
-            WHEN 12 THEN 'Diciembre'
+            WHEN 1 THEN 'Ene'
+            WHEN 2 THEN 'Feb'
+            WHEN 3 THEN 'Mar'
+            WHEN 4 THEN 'Abr'
+            WHEN 5 THEN 'May'
+            WHEN 6 THEN 'Jun'
+            WHEN 7 THEN 'Jul'
+            WHEN 8 THEN 'Ago'
+            WHEN 9 THEN 'Sep'
+            WHEN 10 THEN 'Oct'
+            WHEN 11 THEN 'Nov'
+            WHEN 12 THEN 'Dic'
             END) AS año_mes,
         ROUND(SUM(CASE WHEN M.simbolo = 'C$' THEN P.intereses / P.plazo ELSE 0 END), 3)AS ganancia_mes_cordoba,
         ROUND(SUM(CASE WHEN M.simbolo = '$' THEN P.intereses / P.plazo ELSE 0 END), 3) AS ganancia_mes_dolar
         FROM tblprestamos AS P 
         INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
         INNER JOIN tblcuotas AS C ON P.idprestamo = C.idprestamoFK
+        WHERE YEAR(C.fecha_pago) = ?
         GROUP BY YEAR(C.fecha_pago), MONTH(C.fecha_pago)
-        ORDER BY C.fecha_pago ASC;`);
+        ORDER BY C.fecha_pago ASC;`, [req.params.fecha]);
       
         const monto_prestado_mes = await pool.query(`
-            SELECT 
-                CONCAT(YEAR(fecha_registro), '-', 
-                    CASE MONTH(P.fecha_registro)
-                        WHEN 1 THEN 'Enero'
-                        WHEN 2 THEN 'Febrero'
-                        WHEN 3 THEN 'Marzo'
-                        WHEN 4 THEN 'Abril'
-                        WHEN 5 THEN 'Mayo'
-                        WHEN 6 THEN 'Junio'
-                        WHEN 7 THEN 'Julio'
-                        WHEN 8 THEN 'Agosto'
-                        WHEN 9 THEN 'Septiembre'
-                        WHEN 10 THEN 'Octubre'
-                        WHEN 11 THEN 'Noviembre'
-                        WHEN 12 THEN 'Diciembre'
-                    END) AS año_mes,
-                SUM(P.monto) AS monto,
-                M.simbolo AS simbolo
-            FROM tblprestamos AS P 
-            INNER JOIN tblmoneda AS M
-            ON P.idmonedaFK = M.idmoneda
-            WHERE M.simbolo = '$'
-            GROUP BY año_mes`);
+        SELECT 
+            CONCAT(YEAR(P.fecha_registro), '-', 
+            CASE MONTH(P.fecha_registro)
+            WHEN 1 THEN 'Ene'
+            WHEN 2 THEN 'Feb'
+            WHEN 3 THEN 'Mar'
+            WHEN 4 THEN 'Abr'
+            WHEN 5 THEN 'May'
+            WHEN 6 THEN 'Jun'
+            WHEN 7 THEN 'Jul'
+            WHEN 8 THEN 'Ago'
+            WHEN 9 THEN 'Sep'
+            WHEN 10 THEN 'Oct'
+            WHEN 11 THEN 'Nov'
+            WHEN 12 THEN 'Dic'
+            END) AS año_mes,
+        ROUND(SUM(CASE WHEN M.simbolo = 'C$' THEN P.monto ELSE 0 END), 3)AS prestamo_cordoba,
+        ROUND(SUM(CASE WHEN M.simbolo = '$' THEN P.monto ELSE 0 END), 3) AS prestamo_dolar
+        FROM tblprestamos AS P 
+        INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
+        WHERE YEAR(P.fecha_registro) = ?
+        GROUP BY YEAR(P.fecha_registro), MONTH(P.fecha_registro)
+        ORDER BY P.fecha_registro ASC;`, [req.params.fecha]);
         res.json({ganancia_mes, monto_prestado_mes});   
     } catch (error) {
         console.log(error);

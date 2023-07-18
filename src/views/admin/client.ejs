@@ -463,46 +463,46 @@
     $(document).on('click', '.btn-edit', function() {
         const id = $(this).data('id');
         $.ajax({
-        url: '/admin/edit_client/' + id,
-        dataType: 'json',
-        method: 'GET',
-        success: function(resultado) {
-            $('#actualizar_cliente input[name="act_idcliente"]').val(resultado.idcliente);
-            $('#actualizar_cliente input[name="act_nombre"]').val(resultado.nombre);
-            $('#actualizar_cliente input[name="act_apellido"]').val(resultado.apellido);
-            $('#actualizar_cliente input[name="act_cedula"]').val(resultado.cedula);
-            $('#actualizar_cliente input[name="act_celular"]').val(resultado.celular);
-            $('#actualizar_cliente input[name="act_direccion"]').val(resultado.direccion);
-            $('#actualizar_cliente input[name="act_fecha_nacimiento"]').val(resultado.fecha_nacimiento);
-            $('#actualizar_cliente input[name="act_estado_civil"]').val(resultado.estado_civil);
-            $('#actualizar_cliente input[name="act_usuario"]').val(resultado.usuario);
-            if(resultado.sexo === 'm'){
-                $('#actualizar_cliente #masculino').prop('checked', true);
-            }
-            if(resultado.sexo === 'f'){
-                $('#actualizar_cliente #femenino').prop('checked', true);
-            }
-            $.ajax({
-                url: '/admin/edit_client_ciudad',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    let combobox = $('select[name="act_idciudadFK"]');
-                    combobox.empty();
-                    for(value of data){
-                        if(resultado.idciudad == value.idciudad){
-                            combobox.append($('<option selected>').text(value.nombre).attr('value', value.idciudad));
-                        }else{
-                            combobox.append($('<option>').text(value.nombre).attr('value', value.idciudad));
-                        }
-                    }
-                    $('#clienteModal').modal('show');
+            url: '/admin/edit_client/' + id,
+            dataType: 'json',
+            method: 'GET',
+            success: function(resultado) {
+                $('#actualizar_cliente input[name="act_idcliente"]').val(resultado.idcliente);
+                $('#actualizar_cliente input[name="act_nombre"]').val(resultado.nombre);
+                $('#actualizar_cliente input[name="act_apellido"]').val(resultado.apellido);
+                $('#actualizar_cliente input[name="act_cedula"]').val(resultado.cedula);
+                $('#actualizar_cliente input[name="act_celular"]').val(resultado.celular);
+                $('#actualizar_cliente input[name="act_direccion"]').val(resultado.direccion);
+                $('#actualizar_cliente input[name="act_fecha_nacimiento"]').val(resultado.fecha_nacimiento);
+                $('#actualizar_cliente input[name="act_estado_civil"]').val(resultado.estado_civil);
+                $('#actualizar_cliente input[name="act_usuario"]').val(resultado.usuario);
+                if(resultado.sexo === 'm'){
+                    $('#actualizar_cliente #masculino').prop('checked', true);
                 }
-            });
-        },
-        error: function(err) {
-            console.log(err);
-        }
+                if(resultado.sexo === 'f'){
+                    $('#actualizar_cliente #femenino').prop('checked', true);
+                }
+                $.ajax({
+                    url: '/admin/edit_client_ciudad',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(data) {
+                        let combobox = $('select[name="act_idciudadFK"]');
+                        combobox.empty();
+                        for(value of data){
+                            if(resultado.idciudad == value.idciudad){
+                                combobox.append($('<option selected>').text(value.nombre).attr('value', value.idciudad));
+                            }else{
+                                combobox.append($('<option>').text(value.nombre).attr('value', value.idciudad));
+                            }
+                        }
+                        $('#clienteModal').modal('show');
+                    }
+                });
+            },
+            error: function(err) {
+                console.log(err);
+            }
         });
     });
     

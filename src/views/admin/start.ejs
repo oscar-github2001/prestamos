@@ -1,88 +1,136 @@
 <%- include('../layouts/header') %>
 <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
-    <div id="prestamo" class="col-md-6"></div>
-    <div id="monto_prestamo" class="col-md-4"></div>
+    <div class=" col-md-12 mb-4">
+        <select class="form-select form-select-sm" aria-label="Default select example" id="fecha">
+            <option selected>Seleccione una opción</option>
+            <% for(resultado of resultado) { %>
+                <option value="<%= resultado.fecha %>"><%= resultado.fecha %></option>
+            <% } %>
+        </select>
+    </div>
+    <div id="prestamo" class="col-md-6" style="height: 80vh;"></div>
+    <div id="monto_prestamo" class="col-md-6"></div>
 </div>
 <script>
-    $.ajax({
-        url: '/admin/graph_loan',
-        method: 'GET',
-        dataType: 'json',
-        success: function(data){
-            const chartConfig = {
-                chart: {
-                    type: 'column',
-                    renderTo: 'prestamo'
-                },
-                title: {
-                    text: 'Ganancias Mensuales'
-                },
-                xAxis: {
-                    categories: data.ganancia_mes.map(item => item.año_mes)
-                },
-                yAxis: {
+    obtener_ganancias(new Date().getFullYear());
+    function obtener_ganancias (fecha) {
+        $.ajax({
+            url: '/admin/graph_loan/'+ fecha,
+            method: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                const chartConfig = {
+                    chart: {
+                        type: 'column',
+                        renderTo: 'prestamo'
+                    },
                     title: {
-                        text: 'Ganancias'
-                    }
-                },
-                series: [{
-                    name: 'Dólares',
-                    data: data.ganancia_mes.map(item => item.ganancia_mes_dolar) ,
-                },
-                {
-                    name: 'Córdobas',
-                    data: data.ganancia_mes.map(item => item.ganancia_mes_cordoba)
-                }]
-            };
-            const chart = new Highcharts.Chart(chartConfig);
-        },
-        error: function(error){
+                        text: 'Ganancias Mensuales'
+                    },
+                    xAxis: {
+                        categories: data.ganancia_mes.map(item => item.año_mes)
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Ganancias'
+                        }
+                    },
+                    plotOptions: {
+                        series: {
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                                rotation: -90,
+                            }
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.symbol}</b><b>{point.y}</b><br/>'
+                    },
+                    series: [{
+                        name: 'Dólares',
+                        data: data.ganancia_mes.map(item => ({
+                            y: item.ganancia_mes_dolar,
+                            symbol: '$' 
+                        })),
+                        color: '#1AC62A',
+                        pointWidth: 15 // Ancho de las barras en píxeles
+                    }, {
+                        name: 'Córdobas',
+                        data: data.ganancia_mes.map(item => ({
+                            y: item.ganancia_mes_cordoba,
+                            symbol: 'C$'
+                        })),
+                        pointWidth: 15,
+                        color: '#3BA4D5'
+                    }]
+                        
+                };
+                const grafico_ganancias_mes = new Highcharts.Chart(chartConfig);
 
-        }
-    })
-
-
-       
-   /* $.ajax({
-        url: '/admin/graph_loan',
-        method: 'GET',
-        dataType: 'json',
-        success: function(data) {
-            // Generar la configuración del gráfico
-            const chartConfig = {
-                chart: {
-                    type: 'column',
-                    renderTo: '#prestamo'
-                },
-                title: {
-                    text: 'Préstamos por mes'
-                },
-                xAxis: {
-                    categories: data.prestamo_mes.map(item => item.año_mes),
-                    crosshair: true
-                },
-                yAxis: {
-                    min: 0,
+                const monto_prestado_mes = {
+                    chart: {
+                        type: 'bar',
+                        renderTo: 'monto_prestamo'
+                    },
                     title: {
-                        text: '# Préstamos'
-                    }
-                },
-                series: [
-                    {
-                        name: 'Préstamos',
-                        data: data.prestamo_mes.map(item => item.ganancia_mes),
-                        colorByPoint: true
-                    }
-                ]
-            };
-            // Generar la gráfica utilizando Highcharts
-            const chart = new Highcharts.Chart(chartConfig);
-        },
-        error: function(error) {
-            console.error(error);
-        }
-    });*/
+                        text: 'Monto prestado por mes'
+                    },
+                    xAxis: {
+                        categories: data.monto_prestado_mes.map(item => item.año_mes)
+                    },
+                    yAxis: {
+                        title: {
+                            text: 'Monto prestado'
+                        }
+                    },
+                    plotOptions: {
+                        series: {
+                            borderWidth: 0,
+                            dataLabels: {
+                                enabled: true,
+                            }
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+                        pointFormat: '<span style="color:{point.color}">{point.name}</span>: <b>{point.symbol}</b><b>{point.y}</b><br/>'
+                    },
+                    series: [{
+                        name: 'Dólares',
+                        data: data.monto_prestado_mes.map(item => ({
+                            y: item.prestamo_dolar,
+                            symbol: '$' 
+                        })),
+                        color: '#2153D8',
+                        pointWidth: 15 // Ancho de las barras en píxeles
+                    }, {
+                        name: 'Córdobas',
+                        data: data.monto_prestado_mes.map(item => ({
+                            y: item.prestamo_cordoba,
+                            symbol: 'C$'
+                        })),
+                        color: '#F75353',
+                        pointWidth: 15
+                    }]
+                        
+                };
+                const grafico_monto_prestado = new Highcharts.Chart(monto_prestado_mes);
+            },
+            error: function(error) {
 
+            }
+        });
+    }
+
+    $(document).on('change', '#fecha', function(){
+        const fecha = $('#fecha').val();
+        obtener_ganancias(fecha);
+    });
+
+
+/*
     $.ajax({
         url: '/admin/graph_loan',
         method: 'GET',
@@ -128,6 +176,11 @@
         error: function(error) {
             console.error(error);
         }
-    });
+    });*/
+   // Data retrieved from https://gs.statcounter.com/browser-market-share#monthly-202201-202201-bar
+
+// Create the chart
+
+
 </script>
 <%- include('../layouts/footer') %>
