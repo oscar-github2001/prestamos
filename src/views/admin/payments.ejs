@@ -149,7 +149,7 @@
                     { data: 'codigo',  className: 'text-center'  },
                     { data: 'cliente',  className: 'text-center'  },
                     { data: 'total',  className: 'text-center'  },
-                    { data: 'saldo_pendiente',  className: 'text-center'  },
+                    { data: 'abono_restante',  className: 'text-center'  },
                     {
                         data: null,
                         render: function(data, type, row) {
@@ -189,7 +189,7 @@
                     type: 'GET',
                     success: function(respuesta) {
                     const arreglo_valor_real = [];
-                        arreglo_valor_real[0] = respuesta.detalle_resultado[0].detalle_sumadescuento;
+                        arreglo_valor_real[0] = respuesta.detalle_resultado[0].descuento;
                         if (valor_des_ingresado === 0) {
                             det_saldo_descuento.value = arreglo_valor_real[0];
                         } else {
@@ -198,7 +198,7 @@
                         }
                     },
                     error: function(error) {
-                    console.log(error);
+                        console.log(error.responseJSON.mensaje);
                     }
                 });
             }
@@ -242,7 +242,7 @@
                 $('#form_detalle_prestamo input[name="det_codigo"]').val(respuesta.detalle_resultado[0].codigo);
                 $('#form_detalle_prestamo input[name="det_idprestamo"]').val(respuesta.detalle_resultado[0].idprestamo);
                 $('#form_detalle_prestamo input[name="det_pendiente"]').val(respuesta.detalle_resultado[0].saldo_pendiente);
-                $('#form_detalle_prestamo input[name="det_saldo_descuento"]').val(respuesta.detalle_resultado[0].detalle_sumadescuento);
+                $('#form_detalle_prestamo input[name="det_saldo_descuento"]').val(respuesta.detalle_resultado[0].descuento);
                 $('#pago').val(respuesta.detalle_resultado[0].idprestamo);
                 $('#tabla_cuota tbody tr').empty();
                 for (let i = 0; i < respuesta.resultado.length; i++) { 
@@ -359,8 +359,7 @@
                 data: datosFormulario,
                 dataType: 'json',
                 success: function(respuesta) {
-                    console.log(respuesta.abono)
-                    $('#det_pago').val(respuesta);
+                    $('#det_pago').val(respuesta[0].dinero_pago);
                 },
                 error: function(error) {
                     console.log(error);

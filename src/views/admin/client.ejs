@@ -3,7 +3,7 @@
     <div class="col-md-12 pt-2 pb-2">
         <div id="list-example" class="list-group">
           <a class="list-group-item list-group-item-action agregar_cliente" href="#principal">Nuevo cliente</a>
-          <a class="list-group-item list-group-item-action agregar_cliente" href="#detalle">Nuevo detalle cliente</a>
+          <a class="list-group-item list-group-item-action agregar_cliente obtener_cliente" href="#detalle">Nuevo detalle cliente</a>
         </div>
     </div>
 </div>
@@ -93,12 +93,7 @@
         <div class="col-md-12">
             <div class="form-group mb-2">
                 <label for="idcliente" class="form-label">Clientes</label>
-                <select name="idcliente" class="form-select form-select-sm" id="idcliente" required>
-                    <option>Seleccione una opción</option>
-                    <% for(clientes of clientes) { %>
-                    <option value="<%= clientes.idcliente %>"><%= clientes.nombre %></option>
-                    <% } %>
-                </select>
+                <select name="idcliente" class="form-select form-select-sm" id="idcliente" required></select>
             </div>
         </div>
         <div class="col-md-4">
@@ -428,7 +423,6 @@
                 text:  error.responseJSON.mensaje,
                 icon: 'error'
                 });
-                console.log(error);
             }
         });
     });
@@ -500,8 +494,8 @@
                     }
                 });
             },
-            error: function(err) {
-                console.log(err);
+            error: function(error) {
+                console.log(error.responseJSON.mensaje);
             }
         });
     });
@@ -530,7 +524,6 @@
                     text:  error.responseJSON.mensaje,
                     icon: 'error'
                 });
-                console.log(error);
             }
         });
     });
@@ -538,38 +531,48 @@
     $(document).on('click', '.btn-detail', function() {
         const id = $(this).data('id');
         $.ajax({
-        url: '/admin/edit_client_detail/' + id,
-        dataType: 'json',
-        method: 'GET',
-        success: function(resultado) {
-            $('#actualizar_detalle_cliente input[name="act_iddetallecliente"]').val(resultado.iddetallecliente);
-            $('#actualizar_detalle_cliente input[name="act_ocupacion"]').val(resultado.ocupacion);
-            $('#actualizar_detalle_cliente input[name="act_trabajo"]').val(resultado.trabajo);
-            $('#actualizar_detalle_cliente input[name="act_salario"]').val(resultado.salario);
-            $('#actualizar_detalle_cliente input[name="act_telefono_trabajo"]').val(resultado.telefono_trabajo);
-            $('#actualizar_detalle_cliente input[name="act_fecha_inicio"]').val(resultado.fecha_inicio);
-            $('#actualizar_detalle_cliente input[name="act_fecha_fin"]').val(resultado.fecha_fin);
-            $.ajax({
-                url: '/admin/edit_client_detail_nombre',
-                type: 'GET',
-                dataType: 'json',
-                success: function(data) {
-                    let combobox = $('select[name="act_idcliente"]');
-                    combobox.empty();
-                    for(value of data){
-                        if(resultado.idcliente == value.idcliente){
-                            combobox.append($('<option selected>').text(value.nombre).attr('value', value.idcliente));
-                        }else{
-                            combobox.append($('<option>').text(value.nombre).attr('value', value.idcliente));
-                        }
-                    }
-                    $('#cliente_detalleModal').modal('show');
+            url: '/admin/edit_client_detail/' + id,
+            dataType: 'json',
+            method: 'GET',
+            success: function(resultado) {
+                if(resultado.mensaje === 'Cliente sin detalle cliente'){
+                    Swal.fire(resultado.mensaje)
                 }
-            });
-        },
-        error: function(err) {
-            console.log(err);
-        }
+                else{
+                    $('#actualizar_detalle_cliente input[name="act_iddetallecliente"]').val(resultado.iddetallecliente);
+                    $('#actualizar_detalle_cliente input[name="act_ocupacion"]').val(resultado.ocupacion);
+                    $('#actualizar_detalle_cliente input[name="act_trabajo"]').val(resultado.trabajo);
+                    $('#actualizar_detalle_cliente input[name="act_salario"]').val(resultado.salario);
+                    $('#actualizar_detalle_cliente input[name="act_telefono_trabajo"]').val(resultado.telefono_trabajo);
+                    $('#actualizar_detalle_cliente input[name="act_fecha_inicio"]').val(resultado.fecha_inicio);
+                    $('#actualizar_detalle_cliente input[name="act_fecha_fin"]').val(resultado.fecha_fin);
+                    $.ajax({
+                        url: '/admin/edit_client_detail_nombre',
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log(resultado)
+                            let combobox = $('select[name="act_idcliente"]');
+                            combobox.empty();
+                            for(value of data){
+                                if(resultado.idcliente == value.idcliente){
+                                    combobox.append($('<option selected>').text(value.nombre).attr('value', value.idcliente));
+                                }else{
+                                    combobox.append($('<option>').text(value.nombre).attr('value', value.idcliente));
+                                }
+                            }
+                            $('#cliente_detalleModal').modal('show'); 
+                        }
+                    });
+                }
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+            }   
         });
     });
 
@@ -587,8 +590,7 @@
                     title: 'Detalle del cliente actualizado',
                     text: respuesta.mensaje,
                     icon: 'success'
-                });
-                console.log(respuesta);   
+                });  
             },
             error: function(error) {
                 Swal.fire({
@@ -596,7 +598,6 @@
                     text:  error.responseJSON.mensaje,
                     icon: 'error'
                 });
-                console.log(error);
             }
         });
     });
@@ -604,8 +605,8 @@
         let id = $(this).data('id');
         Swal.fire({
             title: '¿Quieres actualizar el estado?',
-            text: "¡No podrás revertir esto!",
-            icon: 'warning',
+            text: "¡Click, si estás seguro!",
+            icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
@@ -624,7 +625,6 @@
                             text: resultado.mensaje,
                             icon: 'success'
                         });
-                        console.log(resultado);
                         },
                     error: function(error) {
                         Swal.fire({
@@ -637,5 +637,25 @@
             }
         });
     });
+
+    $(document).on('click', '.obtener_cliente', function() {
+        $.ajax({
+            url: '/admin/get_client',
+            dataType: 'json',
+            method: 'GET',
+            success: function(resultado) {
+                let combobox = $('select[name="idcliente"]');
+                combobox.empty();
+                combobox.append($('<option>').text('Seleccione una opción'));
+                for(value of resultado){
+                    combobox.append($('<option>').text(value.nombre).attr('value', value.idcliente));
+                }
+            },
+            error: function(error) {
+                console.log(error.responseJSON.mensaje);
+            }
+        });
+    });
+
 </script>
 <%- include('../layouts/footer') %>

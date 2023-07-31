@@ -9,28 +9,160 @@
               </select>
         </div>
     </div>
- 
+    <div class="col-md-6 mb-2">
+        <div class="form-group mb-2">
+            <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
+            <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" required>
+        </div>
+    </div>
+    <div class="col-md-6 mb-2">
+        <div class="form-group mb-2">
+            <label for="fecha_fin" class="form-label">Fecha de fin:</label>
+            <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" required>
+        </div>
+    </div>
+    <div class="col-md-6 mb-2">
+        <div style="width: 100%;">
+            <button type="submit" class="submit" id="filtrar">Filtrar</button>
+        </div>
+    </div>
+    <div class="col-md-6 mb-2">
+        <div style="width: 100%;">
+            <button type="submit" class="submit excel" id="exportToExcel"><i class="fa-solid fa-file-excel"></i></button>
+        </div>
+    </div>
 </div>
-
-<div class="row mb-2 pb-2 seleccion" style="display: none; background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;" id="reporte_clientes_activos">
-   <div class="col-md-6 mb-2">
-        <a name="" id="" class="" href="/admin/generar-pdf" role="button" style="border: none; background: transparent; text-decoration: none;"><i class="fa-solid fa-file-pdf" style="padding-right: 10px;"></i>PDF</a>
-   </div>
-   <div class="col-md-6">
-        <a name="" id="" class="" href="/admin/generar-excel" role="button" style="border: none; background: transparent; text-decoration: none;"><i class="fa-solid fa-file-excel" style="padding-right: 10px; color: #078718;"></i>EXCEL</a>
-   </div>
+<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
+    <div class="col-md-12">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered table-sm" id="tabla_detalle_prestamos">
+                <thead>
+                    <tr>
+                        <th colspan="4"></th>
+                        <th colspan="2">Fechas de cuotas</th>
+                        <th colspan="2" style="text-align: center;">Principal</th>
+                        <th colspan="1"></th>
+                        <th colspan="1"></th>
+                        <th colspan="2" style="text-align: center;">Intereses</th>
+                        <th colspan="2" style="text-align: center;">Totales</th>
+                    </tr>
+                    <tr>
+                        <th>#</th>
+                        <th>Código</th>
+                        <th>Cliente</th>
+                        <th>Fecha desembolso</th>
+                        <th>Inicio</th>
+                        <th>Fin</th>
+                        <th>C$</th>
+                        <th>$</th>
+                        <th>Plazo/Meses</th>
+                        <th>Tasa interés</th>
+                        <th>C$</th>
+                        <th>$</th>
+                        <th>C$</th>
+                        <th>$</th>
+                    </tr>
+                </thead>
+                <tbody class="table-striped">
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
-<div class="row mb-2 seleccion" style="display: none; background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;" id="otro">
-    otro
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
 <script>
-    $(document).ready(function () {
-        $(document).on('change', '#opcion', function(){
-            let formularioSeleccionado = $(this).val();
-            $('.seleccion').hide();
-            $('#' + formularioSeleccionado).show();
+    $(document).ready(function() {
+        $(document).on('click', '#filtrar', function () {
+            const fecha_inicio = $('#fecha_inicio').val();
+            const fecha_fin = $('#fecha_fin').val();
+            $.ajax({
+                url: '/admin/filter-excel?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin,
+                method: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    const detalle_prestamo = data.detalle_prestamo[0];
+                    const detalle_total_prestamo_dolar = data.detalle_total_prestamo_dolar[0];
+                    const detalle_total_prestamo_cordoba = data.detalle_total_prestamo_cordoba[0];
+
+                      // Verificar si detalle_prestamo es un arreglo
+                    if (Array.isArray(detalle_prestamo)) {
+                        $('#tabla_detalle_prestamos tbody').empty();
+                        let contador = 1;
+                        for(item of detalle_prestamo){
+                            let html = '<tr style="text-align: center; font-size: 12px;">';
+                            html += '<td>' + contador++ + '</td>';
+                            html += '<td>' + item.codigo_prestamo + '</td>';
+                            html += '<td>' + item.nombre + '</td>';
+                            html += '<td>' + item.fecha_desembolso + '</td>';
+                            html += '<td>' + item.fecha_inicio + '</td>';
+                            html += '<td>' + item.fecha_fin + '</td>';
+                            html += '<td>' + item.monto_cordoba + '</td>';
+                            html += '<td>' + item.monto_dolar + '</td>';
+                            html += '<td>' + item.plazo + '</td>';
+                            html += '<td>' + item.taza_intereses + '</td>';
+                            html += '<td>' + item.intereses_cordoba + '</td>';
+                            html += '<td>' + item.intereses_dolar + '</td>';
+                            html += '<td>' + item.total_cordoba + '</td>';
+                            html += '<td>' + item.total_dolar + '</td>';
+                            html += '</tr>';
+                            $('#tabla_detalle_prestamos').append(html);
+                        };
+                    }
+                    let lastRowHtml = '<tr style="text-align: center; background: #0c6efc !important; color: white;">';
+                    lastRowHtml += '<td colspan="6">Total</td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.monto + '</td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.monto + '</td>';
+                    lastRowHtml += '<td colspan="2"></td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.intereses + '</td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.intereses + '</td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.total + '</td>';
+                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.total + '</td>';
+                    lastRowHtml += '</tr>';
+                    $('#tabla_detalle_prestamos').append(lastRowHtml);
+                },
+                error: function (error) {
+                    console.error(error);
+                }
+            });
         });
-    })
+        $(document).on('click', '#exportToExcel', function () {
+            $.ajax({
+                url: '/admin/generar-excel',
+                method: 'GET',
+                xhrFields: {
+                    responseType: 'blob' // Indica que se espera una respuesta binaria (blob)
+                },
+                success: function(data) {
+                    // Crea una URL del blob recibido
+                    const url = URL.createObjectURL(data);
+
+                    // Crea un enlace temporal y simula un clic para descargar el archivo
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'detalle_prestamos.xlsx'; // Nombre del archivo
+                    document.body.appendChild(a);
+                    a.click();
+
+                    // Libera la URL del blob después de la descarga
+                    URL.revokeObjectURL(url);
+
+                    // Muestra una notificación de éxito utilizando SweetAlert2
+                    Swal.fire({
+                        title: 'Reporte generado',
+                        icon: 'success'
+                    });
+                },
+                error: function(error) {
+                    // Muestra una notificación de error utilizando SweetAlert2
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error al generar el archivo Excel.',
+                        icon: 'error'
+                    });
+                    console.log(error);
+                }
+            });
+        });        
+    });
 </script>
 <%- include('../layouts/footer') %>

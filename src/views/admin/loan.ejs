@@ -42,12 +42,12 @@
         <div class="col-md-4">
             <div class="form-group mb-3">
                 <label for="formapago" class="form-label">Forma de pago</label>
-                <select name="formapago" class="form-control form-control-sm" id="formapago" placeholder="Seleccione una opción" required disabled>
+                <select name="formapago" class="form-control form-control-sm" id="formapago" placeholder="Seleccione una opción" required>
                 <% for(let i=0; i < formapago.length; i++) { %>
                     <% if(formapago[i].descripcion == 'Mensual') { %>
-                        <option value="<%= formapago[i].idformapago %>" selected><%= formapago[i].descripcion %></option>
+                        <option value="<%= formapago[i].idformapago %>" selected ><%= formapago[i].descripcion %></option>
                     <% } else { %>
-                        <option value="<%= formapago[i].idformapago %>"><%= formapago[i].descripcion %></option>
+                        <option value="<%= formapago[i].idformapago %>" disabled><%= formapago[i].descripcion %></option>
                     <% } %>
                 <% } %>
                 </select>
@@ -215,7 +215,7 @@
                     { data: 'fecha_fin',  className: 'text-center'  },
                     { data: 'monto',  className: 'text-center'  },
                     { data: 'intereses',  className: 'text-center'  },
-                    { data: 'saldo_pendiente',  className: 'text-center'  },
+                    { data: 'abono_restante',  className: 'text-center'  },
                     {
                     data: null,
                     render: function(data, type, row) {
@@ -232,9 +232,9 @@
             });
         }
         $(document).on('change', '#fprestamo', function(){
-            let id = $(this).val();
+            let estado = $(this).val();
             $('#tabla_prestamo').DataTable().destroy();
-            if(id == 'todo'){
+            if(estado == 'todo'){
                 cargar_tabla_prestamo();
             }
             else{
@@ -247,7 +247,7 @@
                     scrollX: true,
                     scrollCollapse: true,
                     ajax: {
-                        url: '/admin/table_loan/'+id,
+                        url: '/admin/table_loan/' + estado,
                         dataSrc: ''
                     },
                     columns: [
@@ -260,7 +260,7 @@
                         { data: 'fecha_fin',  className: 'text-center'  },
                         { data: 'monto',  className: 'text-center'  },
                         { data: 'intereses',  className: 'text-center'  },
-                        { data: 'saldo_pendiente',  className: 'text-center'  },
+                        { data: 'abono_restante',  className: 'text-center'  },
                         {
                         data: null,
                         render: function(data, type, row) {
@@ -304,7 +304,6 @@
                 text:  error.responseJSON.mensaje,
                 icon: 'error'
                 });
-                console.log(error);
             }
         });
     });
