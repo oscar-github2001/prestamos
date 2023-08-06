@@ -1634,6 +1634,7 @@ router.get('/generar-excel', async (req, res) => {
 });
 
 const direccion = path.join(__dirname, 'backups');
+console.log(direccion)
 
 // Función para generar la copia de seguridad
 async function generarCopiaDeSeguridad() {
