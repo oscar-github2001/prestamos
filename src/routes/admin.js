@@ -1633,9 +1633,20 @@ router.get('/generar-excel', async (req, res) => {
     }
 });
 
-const direccion = path.join(__dirname, 'backups');
-console.log(direccion)
+let direccion;
 
+// Verificar si __dirname está definido (ejecutándose en Node.js)
+if (typeof __dirname !== 'undefined') {
+    direccion = path.join(__dirname, 'backups');
+} else if (typeof window !== 'undefined') {
+    // Obteniendo la dirección en el navegador web
+    direccion = new URL('backups', window.location.href).href;
+} else {
+    // Caso inusual, no hay forma de determinar la dirección
+    console.log('No se puede determinar la dirección del directorio.');
+}
+
+console.log(direccion);
 // Función para generar la copia de seguridad
 async function generarCopiaDeSeguridad() {
     try {
