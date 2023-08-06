@@ -1636,9 +1636,9 @@ router.get('/generar-excel', async (req, res) => {
 let direccion;
 
 // Verificar si __dirname está definido (ejecutándose en Node.js)
-if (typeof __dirname !== 'undefined') {
+/*if (typeof __dirname !== 'undefined') {
     direccion = path.join(__dirname, 'backups');
-} else if (typeof window !== 'undefined') {
+} else */if (typeof window !== 'undefined') {
     // Obteniendo la dirección en el navegador web
     direccion = new URL('backups', window.location.href).href;
 } else {
