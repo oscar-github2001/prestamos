@@ -8,7 +8,10 @@ const e = require('connect-flash');
 const { jsPDF } = require('jspdf');
 const Excel = require('exceljs');
 const bodyParser = require('body-parser');
-
+const CronJob = require('cron').CronJob;
+const {database} = require('../keys');
+const path = require('path');
+const mysqldump = require('mysqldump');
 router.get('/', isLoggedIn, async(req, res) => {
     await pool.query(`
     SELECT DISTINCT 
@@ -1170,7 +1173,8 @@ router.get("/get_quota/:id", async(req, res) => {
                                     FROM tblprestamos AS PP
                                     INNER JOIN tbldescuento AS D
                                     ON PP.idprestamo = D.idprestamoFK
-                                    WHERE idprestamo = P.idprestamo)) AS descuento
+                                    WHERE idprestamo = P.idprestamo)) AS descuento,
+        P.estado AS estado 
         FROM tblprestamos AS P INNER JOIN tblcuotas AS C
         ON C.idprestamoFK = P.idprestamo
         INNER JOIN tblclientes AS CL
@@ -1495,45 +1499,64 @@ router.get('/filter-excel', async (req, res) => {
 
 router.get('/generar-excel', async (req, res) => {
     try {
-        console.log(obtener_detalle_prest.total_todo)
         const workbook = new Excel.Workbook();
         const worksheet = workbook.addWorksheet('Detalle Prestamos');
     
+        // Estilo para el encabezado
+        const headerStyle = {
+            font: { bold: true, size: 14, color: { argb: 'FF381AF5' } }, // ARGB format: FF + Blue + Green + Red
+            alignment: { vertical: 'middle', horizontal: 'center' },
+            border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+            fill: {
+                type: 'pattern',
+                pattern: 'solid',
+                fgColor: { argb: 'FFFFFFFF' }
+            },
+        };
+
+        // Estilo para el contenido de la tabla
+        const contentStyle = {
+            alignment: { vertical: 'middle', horizontal: 'center' },
+            font: { size: 13, bold: false },
+            border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+        };
+    
         const subheaders = [
-            ['#', 'Código', 'Cliente', 'Fecha desembolso', 'Fechas de cuotas', '', 'Principal', '', '', '', 'Intereses', '', 'Totales', ''],
-            ['', '', '', '', 'Inicio', 'Fin', 'C$', '$', 'Plazo/Meses', 'Tasa interés', 'C$', '$', 'C$', '$'],
+            ['#', 'Código', 'Cliente', 'Fecha desembolso', 'Fechas de cuotas', '', 'Principal', '', 'Plazo/Meses', 'Tasa interés', 'Intereses', '', 'Totales', ''],
+            ['', '', '', '', 'Inicio', 'Fin', 'C$', '$', '', '', 'C$', '$', 'C$', '$'],
         ];
 
         // Insert two blank rows before the subheaders
         worksheet.insertRow(1, []);
         worksheet.insertRow(2, []);
     
-        subheaders.forEach((subheaderRow) => {
-            const row = worksheet.addRow(subheaderRow);
+        subheaders.forEach((subheader) => {
+            const row = worksheet.addRow(subheader);
             row.eachCell((cell) => {
-                cell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } }; // Set size to 14 and color to white (FFFFFFFF)
-                cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-                cell.fill = {
-                    type: 'pattern',
-                    pattern: 'solid',
-                    fgColor: { argb: '00BFFF' }, // Set the fill color to light blue (00BFFF)
-                };
+                cell.style = headerStyle; // Aplica el estilo del encabezado a las celdas del encabezado
             });
         });
-    
-        worksheet.mergeCells('E3:F3'); // Fusionar celdas del subencabezado "Fechas de cuotas"
-        worksheet.mergeCells('G3:H3'); // Fusionar celdas del subencabezado "Principal"
-        worksheet.mergeCells('K3:L3'); // Fusionar celdas del subencabezado "Tasa interés"
-        worksheet.mergeCells('M3:N3'); // Fusionar celdas del subencabezado "Intereses"
-    
+        
+        // Horizontal
+        worksheet.mergeCells('A3:A4'); 
+        worksheet.mergeCells('B3:B4');
+        worksheet.mergeCells('C3:C4');
+        worksheet.mergeCells('D3:D4');
+        worksheet.mergeCells('I3:I4'); 
+        worksheet.mergeCells('J3:J4'); 
+        // Vertical
+        worksheet.mergeCells('E3:F3');
+        worksheet.mergeCells('G3:H3');
+        worksheet.mergeCells('K3:L3');
+        worksheet.mergeCells('M3:N3');
+        
         // Obtener los datos de la tabla desde la variable obtener_detalle_prest.filtrar_todo
         const detallePrestamoData = obtener_detalle_prest.filtrar_todo[0];
     
         // Agregar los datos de la tabla al archivo Excel
         let contador = 1;
         for (item of detallePrestamoData) {
-            worksheet.addRow([
+            const row = worksheet.addRow([
                 contador++,
                 item.codigo_prestamo,
                 item.nombre,
@@ -1549,8 +1572,11 @@ router.get('/generar-excel', async (req, res) => {
                 item.total_cordoba,
                 item.total_dolar,
             ]);
+
+            row.eachCell((cell) => {
+                cell.style = contentStyle; // Aplica el estilo del contenido a las celdas del contenido de la tabla
+            });
         }
-    
         worksheet.addRow([
             'Total',
             '',
@@ -1567,15 +1593,31 @@ router.get('/generar-excel', async (req, res) => {
             obtener_detalle_prest.total_todo[1].total,
             obtener_detalle_prest.total_todo[0].total
         ]);
-        // Configurar el estilo de la tabla
-        worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
-            row.eachCell((cell) => {
-                cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                cell.font = { size: 14, bold: false };
-                cell.border = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
-            });
+
+        // Aplica el estilo del contenido a las celdas de la última fila (Total)
+        worksheet.lastRow.eachCell((cell) => {
+            cell.style = contentStyle;
         });
-    
+
+        // Configurar el ancho de las columnas basado en el contenido
+        worksheet.columns.forEach((column) => {
+            let maxLength = 0;
+            column.eachCell({ includeEmpty: false }, (cell) => {
+                let columnLength = 0;
+                if (cell.value !== null && cell.value !== undefined) {
+                    columnLength = cell.value.toString().length;
+                }
+                if (columnLength > maxLength) {
+                    maxLength = columnLength;
+                }
+            });
+            if (maxLength < 25) {
+                column.width = 25;
+            } else {
+                column.width = maxLength + 5;
+            }
+        });
+        
         // Definir el nombre del archivo Excel
         const excelFileName = 'detalle_prestamos.xlsx';
     
@@ -1585,13 +1627,64 @@ router.get('/generar-excel', async (req, res) => {
         return workbook.xlsx.write(res).then(() => {
             res.status(200).end();
         });
-        //res.json({ mensaje: 'Estamos bien' });
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al obtener los datos' });
     }
 });
 
+const direccion = path.join(__dirname, 'backups');
+
+// Función para generar la copia de seguridad
+async function generarCopiaDeSeguridad() {
+    try {
+        const now = new Date();
+        const dateTimeString = now.toLocaleString().replace(/[/:\s]/g, '-');
+        const nombre_backup = `${database.database}-backup-${dateTimeString}.sql`;
+        const paquete_backup = path.join(direccion, nombre_backup);
+
+        await mysqldump({
+            connection: {
+                host: database.host,
+                user: database.user,
+                password: database.password,
+                database: database.database,
+            },
+            dumpToFile: paquete_backup,
+        });
+
+        return paquete_backup;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
+// Programar la tarea cron para realizar la copia de seguridad semanalmente los domingos a las 3 AM
+const cronExpression = '0 3 * * 0';
+const job = new CronJob(cronExpression, async () => {
+    try {
+        const backupPath = await generarCopiaDeSeguridad();
+        console.log(`Copia de seguridad creada correctamente en: ${backupPath}`);
+    } catch (error) {
+        console.log(error);
+    }
+});
+// Iniciar la tarea cron
+job.start();
+
+// Generar backup
+router.get('/backup', async (req, res) => {
+    res.render('admin/backup');
+});
+
+router.get('/generar-backup', async (req, res) => {
+    try {
+        const backupPath = await generarCopiaDeSeguridad();
+        res.json({ mensaje: 'Copia de seguridad creada correctamente' });
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Error al obtener los datos' });
+    }
+});
 // Logout
 router.get('/logout', (req, res) => {
     req.session.destroy();

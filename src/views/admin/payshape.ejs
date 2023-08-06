@@ -179,20 +179,18 @@
                 method: 'DELETE',
                 success: function(respuesta) {
                 $('#tabla_formapago').DataTable().ajax.reload();
-                Swal.fire(
-                    '¡Eliminado!',
-                    respuesta.mensaje,
-                    'success'
-                )
-                console.log(respuesta);
+                    Swal.fire(
+                        '¡Eliminado!',
+                        respuesta.mensaje,
+                        'success'
+                    )
                 },
                 error: function(error) {
-                Swal.fire({
-                    title: 'Error',
-                    text:  error.responseJSON.mensaje,
-                    icon: 'error'
-                });
-                console.log(error);
+                    Swal.fire({
+                        title: 'Error',
+                        text:  error.responseJSON.mensaje,
+                        icon: 'error'
+                    });
                 }
             });
             }

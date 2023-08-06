@@ -1,0 +1,32 @@
+<%- include('../layouts/header') %>
+<div class="row">
+    <div class="col-md-12">
+        <div style="width: 100%;">
+            <button type="submit" class="submit" id="generar_back"><i class="fa-solid fa-database" style="color: #ffffff; font-size: 23px;"></i></button>
+        </div>
+    </div>
+</div>
+<%- include('../layouts/footer') %>
+
+<script>
+    $(document).on('click', '#generar_back', function() {
+        $.ajax({
+            url: '/admin/generar-backup',
+            dataType: 'json',
+            type: 'GET',
+            success: function(resultado) {
+                Swal.fire({
+                    title:  resultado.mensaje,
+                    icon: 'success'
+                });
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+</script>

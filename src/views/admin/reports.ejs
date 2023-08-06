@@ -12,13 +12,13 @@
     <div class="col-md-6 mb-2">
         <div class="form-group mb-2">
             <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
-            <input type="date" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" required>
+            <input type="date" max="9999-12-31" min="1000-01-01" class="form-control form-control-sm" id="fecha_inicio" name="fecha_inicio" required>
         </div>
     </div>
     <div class="col-md-6 mb-2">
         <div class="form-group mb-2">
             <label for="fecha_fin" class="form-label">Fecha de fin:</label>
-            <input type="date" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" required>
+            <input type="date" max="9999-12-31" min="1000-01-01" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" required>
         </div>
     </div>
     <div class="col-md-6 mb-2">
@@ -70,60 +70,95 @@
     </div>
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-<script>
+<script>    
+    function validarFechaExistente(inputId) {
+        const fechaInput = document.getElementById(inputId).value;
+        const partesFecha = fechaInput.split('-');
+        const dia = parseInt(partesFecha[0]);
+        const mes = parseInt(partesFecha[1]);
+        const anio = parseInt(partesFecha[2]);
+        const fecha_correcta = new Date(anio, mes - 1, dia);
+        return (
+            fecha_correcta.getDate() === dia &&
+            fecha_correcta.getMonth() === mes - 1 &&
+            fecha_correcta.getFullYear() === anio
+        );
+    }
+
     $(document).ready(function() {
         $(document).on('click', '#filtrar', function () {
             const fecha_inicio = $('#fecha_inicio').val();
             const fecha_fin = $('#fecha_fin').val();
-            $.ajax({
-                url: '/admin/filter-excel?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin,
-                method: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    const detalle_prestamo = data.detalle_prestamo[0];
-                    const detalle_total_prestamo_dolar = data.detalle_total_prestamo_dolar[0];
-                    const detalle_total_prestamo_cordoba = data.detalle_total_prestamo_cordoba[0];
+         /*   if (!validarFechaExistente($('#fecha_inicio').attr('id'))) {
+                Swal.fire({
+                    title: 'Fecha inicial no existe',
+                    icon: 'error'
+                });
+            }
+            else if (!validarFechaExistente($('#fecha_fin').attr('id'))) {
+                Swal.fire({
+                    title: 'Fecha final no existe',
+                    icon: 'error'
+                });
+            }
+            else*/ if(fecha_inicio >= fecha_fin){
+                Swal.fire({
+                    title: 'Filtrado de fechas incorrecto',
+                    icon: 'warning'
+                });
 
-                      // Verificar si detalle_prestamo es un arreglo
-                    if (Array.isArray(detalle_prestamo)) {
-                        $('#tabla_detalle_prestamos tbody').empty();
-                        let contador = 1;
-                        for(item of detalle_prestamo){
-                            let html = '<tr style="text-align: center; font-size: 12px;">';
-                            html += '<td>' + contador++ + '</td>';
-                            html += '<td>' + item.codigo_prestamo + '</td>';
-                            html += '<td>' + item.nombre + '</td>';
-                            html += '<td>' + item.fecha_desembolso + '</td>';
-                            html += '<td>' + item.fecha_inicio + '</td>';
-                            html += '<td>' + item.fecha_fin + '</td>';
-                            html += '<td>' + item.monto_cordoba + '</td>';
-                            html += '<td>' + item.monto_dolar + '</td>';
-                            html += '<td>' + item.plazo + '</td>';
-                            html += '<td>' + item.taza_intereses + '</td>';
-                            html += '<td>' + item.intereses_cordoba + '</td>';
-                            html += '<td>' + item.intereses_dolar + '</td>';
-                            html += '<td>' + item.total_cordoba + '</td>';
-                            html += '<td>' + item.total_dolar + '</td>';
-                            html += '</tr>';
-                            $('#tabla_detalle_prestamos').append(html);
-                        };
+            }else{
+                $.ajax({
+                    url: '/admin/filter-excel?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin,
+                    method: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        const detalle_prestamo = data.detalle_prestamo[0];
+                        const detalle_total_prestamo_dolar = data.detalle_total_prestamo_dolar[0];
+                        const detalle_total_prestamo_cordoba = data.detalle_total_prestamo_cordoba[0];
+
+                        // Verificar si detalle_prestamo es un arreglo
+                        if (Array.isArray(detalle_prestamo)) {
+                            $('#tabla_detalle_prestamos tbody').empty();
+                            let contador = 1;
+                            for(item of detalle_prestamo){
+                                let html = '<tr style="text-align: center; font-size: 12px;">';
+                                html += '<td>' + contador++ + '</td>';
+                                html += '<td>' + item.codigo_prestamo + '</td>';
+                                html += '<td>' + item.nombre + '</td>';
+                                html += '<td>' + item.fecha_desembolso + '</td>';
+                                html += '<td>' + item.fecha_inicio + '</td>';
+                                html += '<td>' + item.fecha_fin + '</td>';
+                                html += '<td>' + item.monto_cordoba + '</td>';
+                                html += '<td>' + item.monto_dolar + '</td>';
+                                html += '<td>' + item.plazo + '</td>';
+                                html += '<td>' + item.taza_intereses + '</td>';
+                                html += '<td>' + item.intereses_cordoba + '</td>';
+                                html += '<td>' + item.intereses_dolar + '</td>';
+                                html += '<td>' + item.total_cordoba + '</td>';
+                                html += '<td>' + item.total_dolar + '</td>';
+                                html += '</tr>';
+                                $('#tabla_detalle_prestamos').append(html);
+                            };
+                        }
+                        let lastRowHtml = '<tr style="text-align: center; background: #0c6efc !important; color: white;">';
+                        lastRowHtml += '<td colspan="6">Total</td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.monto + '</td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.monto + '</td>';
+                        lastRowHtml += '<td colspan="2"></td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.intereses + '</td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.intereses + '</td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.total + '</td>';
+                        lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.total + '</td>';
+                        lastRowHtml += '</tr>';
+                        $('#tabla_detalle_prestamos').append(lastRowHtml);
+                    },
+                    error: function (error) {
+                        console.error(error);
                     }
-                    let lastRowHtml = '<tr style="text-align: center; background: #0c6efc !important; color: white;">';
-                    lastRowHtml += '<td colspan="6">Total</td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.monto + '</td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.monto + '</td>';
-                    lastRowHtml += '<td colspan="2"></td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.intereses + '</td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.intereses + '</td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_cordoba.total + '</td>';
-                    lastRowHtml += '<td colspan="1">' + detalle_total_prestamo_dolar.total + '</td>';
-                    lastRowHtml += '</tr>';
-                    $('#tabla_detalle_prestamos').append(lastRowHtml);
-                },
-                error: function (error) {
-                    console.error(error);
-                }
-            });
+                });
+                
+            }
         });
         $(document).on('click', '#exportToExcel', function () {
             $.ajax({
@@ -146,14 +181,12 @@
                     // Libera la URL del blob después de la descarga
                     URL.revokeObjectURL(url);
 
-                    // Muestra una notificación de éxito utilizando SweetAlert2
                     Swal.fire({
                         title: 'Reporte generado',
                         icon: 'success'
                     });
                 },
                 error: function(error) {
-                    // Muestra una notificación de error utilizando SweetAlert2
                     Swal.fire({
                         title: 'Error',
                         text: 'Error al generar el archivo Excel.',

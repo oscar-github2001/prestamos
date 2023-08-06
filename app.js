@@ -7,12 +7,8 @@ const flash = require('connect-flash');
 const MySQLStore = require('express-mysql-session')(session);
 const {database} = require('./src/keys');
 
-//console.log(config.PORT); // Acceso a la variable PORT
 //Inicialización
 const app = express();
-//Settings
-//app.set("port", process.env.PORT || PORT);
-//app.set('port', process.env.PORT || 5000);
 app.set("views", path.join(__dirname, "src", "views"));
 app.set("view engine", "ejs");
 
