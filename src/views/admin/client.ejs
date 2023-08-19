@@ -401,21 +401,27 @@
     
     $('#formCliente').on('submit', function(event) {
         event.preventDefault();
-        let datosFormulario = $(this).serialize(); 
+        const datosFormulario = $(this).serialize(); 
         $.ajax({
             url: '/admin/client',
             type: 'POST',
             data: datosFormulario,
             dataType: 'json',
             success: function(respuesta) {
-                $('#tabla_cliente').DataTable().ajax.reload();
-                Swal.fire({
-                    title: 'Cliente registrado',
-                    text: respuesta.mensaje,
-                    icon: 'success'
-                });
-                console.log(respuesta);
-                $('#formCliente')[0].reset(); 
+                if(respuesta.mensaje === "Datos guardados correctamente"){
+                    $('#tabla_cliente').DataTable().ajax.reload();
+                    Swal.fire({
+                        title: 'Cliente registrado',
+                        text: respuesta.mensaje,
+                        icon: 'success'
+                    });
+                    $('#formCliente')[0].reset(); 
+                } else {
+                    Swal.fire({
+                        title: respuesta.mensaje,
+                        icon: 'warning'
+                    }); 
+                }
             },
             error: function(error) {
                 Swal.fire({
@@ -449,7 +455,6 @@
                     text:  error.responseJSON.mensaje,
                     icon: 'error'
                 });
-                console.log(error);
             }
         });
     });

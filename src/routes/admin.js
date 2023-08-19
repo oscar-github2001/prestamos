@@ -7,11 +7,11 @@ const passwordValidation = require('../lib/passwordValidation');
 const e = require('connect-flash');
 const { jsPDF } = require('jspdf');
 const Excel = require('exceljs');
-const bodyParser = require('body-parser');
 const CronJob = require('cron').CronJob;
 const {database} = require('../keys');
 const path = require('path');
 const mysqldump = require('mysqldump');
+const {verificar} = require('../lib/singleField')
 router.get('/', isLoggedIn, async(req, res) => {
     await pool.query(`
     SELECT DISTINCT 
@@ -21,6 +21,7 @@ router.get('/', isLoggedIn, async(req, res) => {
     ORDER BY fecha ASC;
 `, (error, resultado) => {
         if(error){
+            res.status(500).json({ mensaje: 'Error al obtener los datos'});
             console.log(error);
         }
         res.render('admin/start', {resultado});
@@ -60,33 +61,44 @@ router.get("/table_client/:estado", /*isLoggedIn,*/ async(req, res) => {
 });
 
 router.post("/client", /*isLoggedIn,*/ async(req, res) => {
-    const nombre = req.body.nombre;
-    const apellido = req.body.apellido;
-    const cedula = req.body.cedula;
-    const celular = req.body.celular;
-    const direccion = req.body.direccion;
-    const fecha_nacimiento = req.body.fecha_nacimiento;
-    const estado_civil = req.body.estado_civil;
-    const idciudadFK = req.body.idciudadFK;
-    const sexo = req.body.sexo.charAt(0);
-    const usuario = req.body.usuario;
-    const contrasena = await passwordValidation.encryptPassword(req.body.contrasena);
+    try {
+        const nombre = req.body.nombre;
+        const apellido = req.body.apellido;
+        const cedula = req.body.cedula;
+        const celular = req.body.celular;
+        const direccion = req.body.direccion;
+        const fecha_nacimiento = req.body.fecha_nacimiento;
+        const estado_civil = req.body.estado_civil;
+        const idciudadFK = req.body.idciudadFK;
+        const sexo = req.body.sexo.charAt(0);
+        const usuario = req.body.usuario;
+        const contrasena = await passwordValidation.encryptPassword(req.body.contrasena);
+        const cedula_unica = await verificar ('cedula', cedula, 'tblclientes');
+        const celular_unico = await verificar ('celular', celular, 'tblclientes');
 
-    await pool.query(`
-        CALL pa_insertar_clientes (?, ? ,?, ?, ?, ?, ?, ?, ?, ?, ?)`, [   
-        nombre, apellido, 
-        fecha_nacimiento,
-        sexo, cedula,
-        celular, direccion,
-        usuario, contrasena,
-        estado_civil, idciudadFK ], function(error, resultado) {
-    if (error) {
+        if (cedula_unica[0].existe_registro > 0 && celular_unico[0].existe_registro > 0) {
+            res.json({ mensaje: 'Número de Cédula y número de celular ya existe' });
+        } 
+        else if((cedula_unica[0].existe_registro) > 0){
+            res.json({ mensaje: 'Número de Cédula ya existe' });
+        }
+        else if((celular_unico[0].existe_registro) > 0){
+            res.json({ mensaje: 'Número de celular ya existe' });
+        } 
+        else {
+            await pool.query(`CALL pa_insertar_clientes (?, ? ,?, ?, ?, ?, ?, ?, ?, ?, ?)`, [   
+            nombre, apellido, 
+            fecha_nacimiento,
+            sexo, cedula,
+            celular, direccion,
+            usuario, contrasena,
+            estado_civil, idciudadFK ]);
+            res.json({ mensaje: 'Datos guardados correctamente' });
+        }
+    } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al guardar los datos' });
-    } else {
-        res.json({ mensaje: 'Datos guardados correctamente' });
     }
-    });
 });
 
 router.get('/edit_client/:id', async(req, res) => {
@@ -108,7 +120,7 @@ router.get('/edit_client/:id', async(req, res) => {
         WHERE idcliente = ?`, [req.params.id], function(error, resultado) {
         if (error) {
             console.log(error);
-            res.status(500).json({ mensaje: 'Error al obtener los datos ' + error});
+            res.status(500).json({ mensaje: 'Error al obtener los datos '});
         } else {
             res.json(resultado[0]);
         }
@@ -637,14 +649,17 @@ router.get("/table_role", async(req, res) => {
 
 router.post("/role", async(req, res) => {
     const descripcion = req.body.descripcion;
-    await pool.query('INSERT INTO tblroles (descripcion) VALUES (?)', [descripcion], function(error, resultado) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ mensaje: 'Error al guardar los datos' });
+    try {
+        if ((await verificar ('descripcion', descripcion, 'tblroles'))[0].existe_registro > 0) {
+            res.json({ mensaje: 'Rol de usuario ya existe' });
         } else {
+            await pool.query('INSERT INTO tblroles (descripcion) VALUES (?)', [descripcion]);
             res.json({ mensaje: 'Datos guardados correctamente' });
         }
-    });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error al guardar los datos' });
+    }
 });
 
 router.get('/edit_role/:id', async(req, res) => {
@@ -690,15 +705,17 @@ router.get("/countries", async(req, res) => {
 });
 
 router.post("/countries", async(req, res) => {
-    const pais = req.body.pais;
-    await pool.query('INSERT INTO tblpais (nombre) VALUES (?)', [pais], function(error, resultado) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ mensaje: 'Error al guardar los datos' });
+    try {
+        if ((await verificar ('nombre', req.body.pais, 'tblpais'))[0].existe_registro > 0) {
+            res.json({ mensaje: 'País ya existe' });
         } else {
+            await pool.query('INSERT INTO tblpais (nombre) VALUES (?)', [req.body.pais]);
             res.json({ mensaje: 'Datos guardados correctamente' });
         }
-    });
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error al guardar los datos' });
+    }
 });
 
 router.get("/table_countries", async(req, res) => {
@@ -1009,8 +1026,7 @@ router.get('/loan', async(req, res) => {
 
         res.render('admin/loan', {clientes, tipoprestamo, intereses, formapago, moneda});
     } catch (error) {
-        console.log(error)
-        res.status(500).json({ mensaje: 'Error al mostrar los datos' });
+        console.log(error);
     }
 });
 
@@ -1187,14 +1203,13 @@ router.get("/get_quota/:id", async(req, res) => {
         res.json({resultado, detalle_resultado});
     } catch (error) {
         console.log(error);
-        res.status(500).json({ mensaje: 'Error al guardar los datos' });
+        res.status(500).json({ mensaje: 'Error al obtener los datos' });
     }
 });
 
 router.get('/sum_payment/:id', async(req, res) => {
-    const id = req.params.id;
     try {
-        let obtener_pago = await pool.query(`
+        const obtener_pago = await pool.query(`
             SELECT 
                 CONCAT(M.simbolo,' ', PO.pago) AS pago,
                 DATE_FORMAT(PO.fecha_pago, '%Y-%m-%d %h:%i %p') AS fecha_pago
@@ -1204,9 +1219,9 @@ router.get('/sum_payment/:id', async(req, res) => {
             ON P.idprestamo = C.idprestamoFK
             INNER JOIN tblpagos AS PO 
             ON C.idcuota = PO.idcuotaFK
-            WHERE C.idcuota = ?`, [id]);
+            WHERE C.idcuota = ?`, [req.params.id]);
 
-        let total  =  await pool.query (`
+        const total  =  await pool.query (`
             SELECT 
                 CONCAT(M.simbolo,' ', SUM(PO.pago)) AS pago,
                 CONCAT(M.simbolo,' ', C.abono - SUM(PO.pago)) AS pendiente,
@@ -1223,17 +1238,17 @@ router.get('/sum_payment/:id', async(req, res) => {
             ON P.idprestamo = C.idprestamoFK
             INNER JOIN tblpagos AS PO 
             ON C.idcuota = PO.idcuotaFK
-            WHERE C.idcuota = ?`,  [id]);
+            WHERE C.idcuota = ?`,  [req.params.id]);
         res.json({obtener_pago, total});
     } catch (error) {
         console.log(error);
+        res.status(500).json({ mensaje: 'Error al obtener los datos' });
     }
 });
 
 //Pagos
 router.get('/payments', async(req, res) => {
     try {
-        const codigos = await pool.query("SELECT idprestamo, codigo FROM tblprestamos");
         const clientes = await pool.query(` 
             SELECT 
                 DISTINCT 
@@ -1322,6 +1337,7 @@ router.post("/get_payments_quotas", async(req, res) => {
         res.json(abono);
     } catch (error) {
         console.log(error);
+        res.status(500).json({ mensaje: 'Error al obtener los datos' });
     }
 });
 
@@ -1395,13 +1411,12 @@ router.post("/payments_quotas", async (req, res) => {
       }
     } catch (error) {
       console.log(error);
+      res.status(500).json({ mensaje: 'Error al guardar el pago' });
     }
 });
   
 router.get('/graph_loan/:fecha', async(req, res) => {
     try {
-        const fecha = req.params.fecha;
-        console.log(fecha)
         const ganancia_mes = await pool.query(`
         SELECT 
             CONCAT(YEAR(C.fecha_pago), '-', 
@@ -1455,7 +1470,7 @@ router.get('/graph_loan/:fecha', async(req, res) => {
         res.json({ganancia_mes, monto_prestado_mes});   
     } catch (error) {
         console.log(error);
-        res.status(500).json({ mensaje: 'Error al obtener los datos' });
+        res.status(500).json({ mensaje: 'Error al obtener los datos para las gráficas' });
     }
 });
 
@@ -1467,7 +1482,7 @@ router.get('/reports', (req, res) => {
 var obtener_detalle_prest = {
     "filtrar_todo": [],
     "total_todo": []
-  };
+};
 router.get('/filter-excel', async (req, res) => {
     try {
         const detalle_prestamo = await pool.query(`CALL Filtrar_Detalle_Prestamos(?, ?)`, [req.query.fecha_inicio, req.query.fecha_fin]);
@@ -1488,7 +1503,6 @@ router.get('/filter-excel', async (req, res) => {
         const detalle_total_prestamo_dolar = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, '$');
         const detalle_total_prestamo_cordoba = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, 'C$');
         obtener_detalle_prest.total_todo.push(detalle_total_prestamo_dolar[0], detalle_total_prestamo_cordoba[0]);
-        console.log(obtener_detalle_prest.total_todo[0].monto)
         res.json({detalle_prestamo, detalle_total_prestamo_dolar, detalle_total_prestamo_cordoba});
     
     } catch (error) {
@@ -1504,7 +1518,7 @@ router.get('/generar-excel', async (req, res) => {
     
         // Estilo para el encabezado
         const headerStyle = {
-            font: { bold: true, size: 14, color: { argb: 'FF381AF5' } }, // ARGB format: FF + Blue + Green + Red
+            font: { bold: true, size: 14, color: { argb: 'FF00008B' } }, // ARGB format: FF + Blue + Green + Red
             alignment: { vertical: 'middle', horizontal: 'center' },
             border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
             fill: {
@@ -1629,24 +1643,11 @@ router.get('/generar-excel', async (req, res) => {
         });
     } catch (error) {
         console.log(error);
-        res.status(500).json({ mensaje: 'Error al obtener los datos' });
+        res.status(500).json({ mensaje: 'Error al generar el archivo Excel' });
     }
 });
 
-let direccion;
-
-// Verificar si __dirname está definido (ejecutándose en Node.js)
-/*if (typeof __dirname !== 'undefined') {
-    direccion = path.join(__dirname, 'backups');
-} else */if (typeof window !== 'undefined') {
-    // Obteniendo la dirección en el navegador web
-    direccion = new URL('backups', window.location.href).href;
-} else {
-    // Caso inusual, no hay forma de determinar la dirección
-    console.log('No se puede determinar la dirección del directorio.');
-}
-
-console.log(direccion);
+direccion = path.join(__dirname, 'backups');
 // Función para generar la copia de seguridad
 async function generarCopiaDeSeguridad() {
     try {
@@ -1672,7 +1673,7 @@ async function generarCopiaDeSeguridad() {
 }
 
 // Programar la tarea cron para realizar la copia de seguridad semanalmente los domingos a las 3 AM
-const cronExpression = '0 3 * * 0';
+const cronExpression = '02 18 * * 1';
 const job = new CronJob(cronExpression, async () => {
     try {
         const backupPath = await generarCopiaDeSeguridad();

@@ -113,14 +113,20 @@
             data: datosFormulario,
             dataType: 'json',
             success: function(respuesta) {
-                $('#tabla_rol').DataTable().ajax.reload();
-                Swal.fire({
-                    title: 'Rol de Usuario registrado',
-                    text: respuesta.mensaje,
-                    icon: 'success'
-                });
-                console.log(respuesta);
-                $('#formRol')[0].reset();
+                if(respuesta.mensaje === "Datos guardados correctamente"){
+                    $('#tabla_rol').DataTable().ajax.reload();
+                    Swal.fire({
+                        title: 'Rol de Usuario registrado',
+                        text: respuesta.mensaje,
+                        icon: 'success'
+                    });
+                    $('#formRol')[0].reset();
+                } else {
+                    Swal.fire({
+                        title: respuesta.mensaje,
+                        icon: 'warning'
+                    }); 
+                }
             },
             error: function(error) {
                 Swal.fire({

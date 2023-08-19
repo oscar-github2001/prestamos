@@ -1,14 +1,16 @@
 <%- include('../layouts/header') %>
 <div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
     <div class="col-md-12">
-        <div class="form-group mb-2">
-            <select class="form-select form-select-sm ver_reporte" aria-label="Default select example" id="opcion" >
-                <option selected>Seleccione una opción</option>
-                <option value="reporte_clientes_activos">Reporte de clientes con prestamos activos</option>
-                <option value="otro">Reporte de prestamos cancelados</option>
+        <div class="form-group pb-3 pt-2">
+            <select class="form-select form-select-sm" aria-label="Default select example" id="opcion" >
+                <option selected>Seleccione una opción de reporte</option>
+                <option value="rep1">Reporte detallado de los prestamos</option>
+                <option value="rep2">Otro</option>
               </select>
         </div>
     </div>
+</div>
+<div class="row mb-2 comp_reporte" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px; display: none;" id="rep1">
     <div class="col-md-6 mb-2">
         <div class="form-group mb-2">
             <label for="fecha_inicio" class="form-label">Fecha de inicio:</label>
@@ -21,18 +23,16 @@
             <input type="date" max="9999-12-31" min="1000-01-01" class="form-control form-control-sm" id="fecha_fin" name="fecha_fin" required>
         </div>
     </div>
-    <div class="col-md-6 mb-2">
+    <div class="col-md-6 mb-4">
         <div style="width: 100%;">
             <button type="submit" class="submit" id="filtrar">Filtrar</button>
         </div>
     </div>
-    <div class="col-md-6 mb-2">
+    <div class="col-md-6 mb-4">
         <div style="width: 100%;">
             <button type="submit" class="submit excel" id="exportToExcel"><i class="fa-solid fa-file-excel"></i></button>
         </div>
     </div>
-</div>
-<div class="row mb-2" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px;">
     <div class="col-md-12">
         <div class="table-responsive">
             <table class="table table-hover table-bordered table-sm" id="tabla_detalle_prestamos">
@@ -69,44 +69,43 @@
         </div>
     </div>
 </div>
+<div class="row mb-2 comp_reporte" style="background: rgb(255, 255, 255); border-radius: 7px; padding-top: 10px; display: none;" id="rep2">
+    Otro
+</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
-<script>    
-    function validarFechaExistente(inputId) {
-        const fechaInput = document.getElementById(inputId).value;
+<script>   
+    /*function esFechaValida(fechaInput) {
         const partesFecha = fechaInput.split('-');
         const dia = parseInt(partesFecha[0]);
         const mes = parseInt(partesFecha[1]);
         const anio = parseInt(partesFecha[2]);
-        const fecha_correcta = new Date(anio, mes - 1, dia);
-        return (
-            fecha_correcta.getDate() === dia &&
-            fecha_correcta.getMonth() === mes - 1 &&
-            fecha_correcta.getFullYear() === anio
-        );
-    }
 
+        const fecha = new Date(anio, mes - 1, dia);
+
+        return (
+            fecha.getDate() === dia &&
+            fecha.getMonth() === mes - 1 &&
+            fecha.getFullYear() === anio
+        );
+    }*/
     $(document).ready(function() {
+        $(document).on('change', '#opcion', function() {
+            let formularioSeleccionado = $(this).val();
+            $('.comp_reporte').hide();
+            $('#' + formularioSeleccionado).show();
+        });
+
         $(document).on('click', '#filtrar', function () {
             const fecha_inicio = $('#fecha_inicio').val();
             const fecha_fin = $('#fecha_fin').val();
-         /*   if (!validarFechaExistente($('#fecha_inicio').attr('id'))) {
-                Swal.fire({
-                    title: 'Fecha inicial no existe',
-                    icon: 'error'
-                });
-            }
-            else if (!validarFechaExistente($('#fecha_fin').attr('id'))) {
-                Swal.fire({
-                    title: 'Fecha final no existe',
-                    icon: 'error'
-                });
-            }
-            else*/ if(fecha_inicio >= fecha_fin){
+            if(fecha_inicio >= fecha_fin){
+                $('#fecha_inicio').val("");
+                $('#fecha_fin').val("");
+
                 Swal.fire({
                     title: 'Filtrado de fechas incorrecto',
                     icon: 'warning'
                 });
-
             }else{
                 $.ajax({
                     url: '/admin/filter-excel?fecha_inicio=' + fecha_inicio + '&fecha_fin=' + fecha_fin,
@@ -161,40 +160,46 @@
             }
         });
         $(document).on('click', '#exportToExcel', function () {
-            $.ajax({
-                url: '/admin/generar-excel',
-                method: 'GET',
-                xhrFields: {
-                    responseType: 'blob' // Indica que se espera una respuesta binaria (blob)
-                },
-                success: function(data) {
-                    // Crea una URL del blob recibido
-                    const url = URL.createObjectURL(data);
+            if(document.getElementById('tabla_detalle_prestamos').rows.length === 0){
+                Swal.fire({
+                    title: 'Tabla no tiene datos',
+                    icon: 'warning'
+                });
+            } else{
+                $.ajax({
+                    url: '/admin/generar-excel',
+                    method: 'GET',
+                    xhrFields: {
+                        responseType: 'blob' // Indica que se espera una respuesta binaria (blob)
+                    },
+                    success: function(data) {
+                        // Crea una URL del blob recibido
+                        const url = URL.createObjectURL(data);
 
-                    // Crea un enlace temporal y simula un clic para descargar el archivo
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'detalle_prestamos.xlsx'; // Nombre del archivo
-                    document.body.appendChild(a);
-                    a.click();
+                        // Crea un enlace temporal y simula un clic para descargar el archivo
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'detalle_prestamos.xlsx'; // Nombre del archivo
+                        document.body.appendChild(a);
+                        a.click();
 
-                    // Libera la URL del blob después de la descarga
-                    URL.revokeObjectURL(url);
+                        // Libera la URL del blob después de la descarga
+                        URL.revokeObjectURL(url);
 
-                    Swal.fire({
-                        title: 'Reporte generado',
-                        icon: 'success'
-                    });
-                },
-                error: function(error) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Error al generar el archivo Excel.',
-                        icon: 'error'
-                    });
-                    console.log(error);
-                }
-            });
+                        Swal.fire({
+                            title: 'Reporte generado',
+                            icon: 'success'
+                        });
+                    },
+                    error: function(error) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Error al generar el archivo Excel.',
+                            icon: 'error'
+                        });
+                    }
+                });
+            }
         });        
     });
 </script>

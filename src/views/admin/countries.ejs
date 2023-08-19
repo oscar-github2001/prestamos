@@ -117,14 +117,22 @@
       data: datosFormulario,
       dataType: 'json',
       success: function(respuesta) {
-        $('#table_countries').DataTable().ajax.reload();
-        Swal.fire({
-          title: 'País registrado',
-          text: respuesta.mensaje,
-          icon: 'success'
-        });
-        console.log(respuesta);
-        $('#formCountries')[0].reset(); // Vaciar los campos del formulario
+        if(respuesta.mensaje === "Datos guardados correctamente"){
+          $('#table_countries').DataTable().ajax.reload();
+          Swal.fire({
+            title: 'País registrado',
+            text: respuesta.mensaje,
+            icon: 'success'
+          });
+          $('#formCountries')[0].reset(); 
+        }
+        else{
+          Swal.fire({
+            title: respuesta.mensaje,
+            icon: 'warning'
+          }); 
+        }
+       
       },
       error: function(error) {
         Swal.fire({

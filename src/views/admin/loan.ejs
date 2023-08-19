@@ -8,7 +8,7 @@
                 <select name="cliente" class="form-select form-select-sm" id="cliente" placeholder="Seleccione una opción" required>
                   <option value="">Seleccione una opción</option>
                   <% for(let i=0; i < clientes.length; i++) { %>
-                    <option value="<%= clientes[i].idcliente %>"><%= clientes[i].nombre %></option>
+                    <option value="<%= clientes[i].idcliente %>"><%= clientes[i].nombre +" "+ clientes[i].apellido  %></option>
                   <% } %>
                 </select>
             </div>
@@ -300,9 +300,9 @@
             },
             error: function(error) {
                 Swal.fire({
-                title: 'Error',
-                text:  error.responseJSON.mensaje,
-                icon: 'error'
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
                 });
             }
         });
@@ -424,6 +424,17 @@
     $('#buscar').on('keyup', function () {
         $('#tabla_prestamo').DataTable().search(this.value).draw();
     });
+
+    function campo_numero() {
+        const campo = document.getElementById('monto');
+        console.log(campo.value)
+        campo.addEventListener('input', function() {
+            if(!isNaN(campo.value)){
+                parseFloat(parseFloat(campo.value).toFixed(3));
+            }
+        });
+    }
+    campo_numero();
 </script>
 
 <%- include('../layouts/footer') %>

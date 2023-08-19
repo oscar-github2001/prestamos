@@ -166,6 +166,7 @@
             });
         });
     });
+
     descuento_tiemporeal()
     function descuento_tiemporeal() {
         const det_descuento = document.getElementById('det_descuento');
@@ -181,7 +182,6 @@
                 } else {
                     valor_des_ingresado = parseFloat(parseFloat(det_descuento.value).toFixed(3));
                 }
-                console.log(valor_des_ingresado);
                 const id = det_idprestamo.value;
                 $.ajax({
                     url: '/admin/get_quota/' + id,
@@ -230,6 +230,7 @@
             }
         });
     }*/
+    
     const cargar_cuotas = (id) => {
         $.ajax({
             url: '/admin/get_quota/' + id,
@@ -284,7 +285,11 @@
                 $('#tabla_cuota').append(lastRowHtml);
             },
             error: function(error) {
-                console.log(error);
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
             }
         });
     };
@@ -325,7 +330,11 @@
                     detailsCell.html(html);
                 },
                 error: function(error){
-                    console.log(error);
+                    Swal.fire({
+                        title: 'Error',
+                        text:  error.responseJSON.mensaje,
+                        icon: 'error'
+                    });
                 }
             });
         }
@@ -340,7 +349,6 @@
         let id = $(this).val();
         let pago = $('#det_pago');
         let elementos_pago;
-
         if (id === '2') {
             pago.val('');
             pago.prop('readOnly', false);
@@ -362,7 +370,11 @@
                     $('#det_pago').val(respuesta[0].dinero_pago);
                 },
                 error: function(error) {
-                    console.log(error);
+                    Swal.fire({
+                        title: 'Error',
+                        text:  error.responseJSON.mensaje,
+                        icon: 'error'
+                    });
                 }
             });
         }
@@ -434,11 +446,10 @@
                     },
                     error: function(error) {
                         Swal.fire({
-                        title: 'Error',
-                        text:  error.responseJSON.mensaje,
-                        icon: 'error'
+                            title: 'Error',
+                            text:  error.responseJSON.mensaje,
+                            icon: 'error'
                         });
-                        console.log(error);
                     }
                 });
             }
