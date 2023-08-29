@@ -230,7 +230,7 @@
         Swal.fire({
             title: '¿Quieres actualizar el estado?',
             text: "¡No podrás revertir esto!",
-            icon: 'warning',
+            icon: 'question',
             showCancelButton: true,
             confirmButtonColor: '#3085d6',
             cancelButtonColor: '#d33',
@@ -244,11 +244,18 @@
                     type: 'POST',
                     success: function(resultado) {
                         $('#tabla_usuario').DataTable().ajax.reload();
-                        Swal.fire({
-                            title: 'Estado Actualizado',
-                            text: resultado.mensaje,
-                            icon: 'success'
-                        });
+                        if(resultado.mensaje === "Necesitas iniciar sesión como administrador" || resultado.mensaje === "No puedes dar de baja al usuario con el que haz iniciado sesión"){
+                            Swal.fire({
+                                title: resultado.mensaje,
+                                icon: 'warning'
+                            });
+                        } else{
+                            Swal.fire({
+                                title: 'Estado Actualizado',
+                                text: resultado.mensaje,
+                                icon: 'success'
+                            });
+                        }
                         console.log(resultado);
                         },
                     error: function(error) {

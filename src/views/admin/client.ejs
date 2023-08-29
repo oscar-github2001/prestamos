@@ -625,12 +625,19 @@
                     type: 'POST',
                     success: function(resultado) {
                         $('#tabla_cliente').DataTable().ajax.reload();
-                        Swal.fire({
-                            title: 'Estado Actualizado',
-                            text: resultado.mensaje,
-                            icon: 'success'
-                        });
-                        },
+                        if(resultado.mensaje === "No se puede dar de baja al cliente ya que tiene préstamos pendientes"){
+                            Swal.fire({
+                                title: resultado.mensaje,
+                                icon: 'warning'
+                            });
+                        }else{
+                            Swal.fire({
+                                title: 'Estado Actualizado',
+                                text: resultado.mensaje,
+                                icon: 'success'
+                            });
+                        }
+                    },
                     error: function(error) {
                         Swal.fire({
                             title: 'Error',

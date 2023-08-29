@@ -16,7 +16,7 @@
         <div class="col-md-4">
             <div class="form-group mb-3">
                 <label for="fecha_registro" class="form-label mb-2">Fecha desembolso</label>
-                <input type="date" class="form-control form-control-sm" id="fecha_registro" name="fecha_registro" >
+                <input type="date" max="9999-12-31" min="1000-01-01" class="form-control form-control-sm" id="fecha_registro" name="fecha_registro" required>
             </div>
         </div>
         <div class="col-md-4">
@@ -65,11 +65,11 @@
         <div class="col-md-4">
             <div class="form-group mb-3">
                 <label for="monto" class="form-label mb-2">Monto</label>
-                <input type="text" class="form-control form-control-sm" id="monto" name="monto" placeholder="Monto a Prestar">
+                <input oninput="validarNumero(this)" type="text" class="form-control form-control-sm" id="monto" name="monto" placeholder="Monto a Prestar" required>
             </div>
             <div class="form-group mb-3">
                 <label for="plazo" class="form-label mb-2">Plazo</label>
-                <input type="number" class="form-control form-control-sm" id="plazo" name="plazo" placeholder="Plazo en Meses">
+                <input oninput="validarPlazo(this)" type="number" class="form-control form-control-sm" id="plazo" name="plazo" placeholder="Plazo en Meses" required>
             </div>
         </div>
         <div class="col-md-2">
@@ -291,12 +291,13 @@
             success: function(respuesta) {
                 $('#tabla_prestamo').DataTable().ajax.reload();
                 Swal.fire({
-                    title: 'Prestamo registrado',
+                    title: respuesta.titulo,
                     text: respuesta.mensaje,
-                    icon: 'success'
+                    icon: respuesta.icono
                 });
-                console.log(respuesta);
-                $('#formPrestamo')[0].reset(); 
+                if(respuesta.icono === "success"){
+                    $('#formPrestamo')[0].reset(); 
+                }
             },
             error: function(error) {
                 Swal.fire({
@@ -425,16 +426,14 @@
         $('#tabla_prestamo').DataTable().search(this.value).draw();
     });
 
-    function campo_numero() {
-        const campo = document.getElementById('monto');
-        console.log(campo.value)
-        campo.addEventListener('input', function() {
-            if(!isNaN(campo.value)){
-                parseFloat(parseFloat(campo.value).toFixed(3));
-            }
-        });
+    function validarNumero(input) {
+        input.value = input.value.replace(/^\./g, '');  // Asegurar que no comience con un punto decimal
+        input.value = input.value.replace(/^(\d*\.?\d{0,3}).*|[^0-9.]/g, '$1').substr(0, 10);
     }
-    campo_numero();
-</script>
 
+    function validarPlazo(input){
+        input.value = input.value.replace(/[^1-9]/g, '').substr(0, 3);
+    }
+
+</script>
 <%- include('../layouts/footer') %>

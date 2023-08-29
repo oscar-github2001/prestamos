@@ -81,15 +81,16 @@
                               </select>
                         </div>
                     </div>
-                    <div class="col-md-4 reducir mt-4">
+                    <div class="col-md-4 reducir mb-2">
                         <div class="form-group">
-                            <input type="text" id="det_pago" readonly name="det_pago" class="form-control form-control-sm">
+                            <label for="det_pago" class="form-label mb-1" style="font-size: 13px;">Monto</label>
+                            <input type="text" id="det_pago" readonly name="det_pago" class="form-control form-control-sm" oninput="validarNumero(this);" required>
                         </div>
                     </div>
                     <div class="col-md-3 mb-2" style="display: none;" id="div-descuento">
                         <div class="form-group">
                             <label for="det_descuento" class="form-label mb-1" style="font-size: 13px;">Descuento</label>
-                            <input type="text" id="det_descuento" name="det_descuento" class="form-control form-control-sm">
+                            <input type="text" id="det_descuento" name="det_descuento" class="form-control form-control-sm" oninput="validarNumero(this);">
                         </div>
                     </div>
                     <div class="col-md-4 reducir mt-4">
@@ -249,7 +250,7 @@
                 for (let i = 0; i < respuesta.resultado.length; i++) { 
                     let item = respuesta.resultado[i];
                     let html = '<tr style="text-align: center;  font-size: 12px;">';
-                    html += '<td><button style="line-height: 1.2; background: #0096d2; color:#fff; text-align: center; font-weight: 600; border:none;  border-radius: 10px; width: 17px; height:17px;" class="details-control" data-idcuota="' + item.idcuota + '">+</button></td>';
+                    html += '<td><button style="line-height: 1; background: #345C95; color:#fff; text-align: center; font-weight: 600; border:none;  border-radius: 10px; width: 18px; height:18px;" class="details-control" data-idcuota="' + item.idcuota + '">+</button></td>';
                     html += '<td>' + item.cuota + '</td>';
                     html += '<td>' + item.fecha_pago + '</td>';
                     html += '<td>' + item.capital + '</td>';
@@ -387,14 +388,9 @@
         let det_pago = $('#form_detalle_prestamo input[name="det_pago"]').val();
         let det_descuento = $('#form_detalle_prestamo input[name="det_descuento"]').val();
         let det_idprestamo = $('#form_detalle_prestamo input[name="det_idprestamo"]').val();
-        let det_saldo_descuento;
-        const det_saldo_descuento_checkbox = document.getElementById('det_saldo_descuento_checkbox');
-       // if (det_saldo_descuento_checkbox.checked) {
-            det_saldo_descuento = $('#form_detalle_prestamo input[name="det_saldo_descuento"]').val();
-        /*} else {
-            det_saldo_descuento = 0;
-    
-        }*/
+        if (/^\s*$/.test(det_descuento)) {
+            det_descuento = 0;
+        }
         Swal.fire({
             title: '¿Quieres realizar el pago?',
             text: "¡No podrás revertir esto!",
@@ -412,37 +408,17 @@
                     data: {
                         det_pago: det_pago,
                         det_descuento: det_descuento,
-                        det_idprestamo: det_idprestamo,
-                        det_saldo_descuento: det_saldo_descuento
+                        det_idprestamo: det_idprestamo
                     },
                     dataType: 'json',
                     success: function(respuesta) {
                         $('#tabla_prestamo_pago').DataTable().ajax.reload();
                         cargar_cuotas(id);
-                        if(respuesta.mensaje === "Datos guardados correctamente"){
-                            Swal.fire({
-                                title: 'Pagos registrados',
-                                text: respuesta.mensaje,
-                                icon: 'success'
-                            });
-                        }
-                        else if(respuesta.mensaje === "La cantidad ingresada es mayor a lo que debes en el prestamo"){
-                            Swal.fire({
-                                title: respuesta.mensaje,
-                                icon: 'warning'
-                            });
-                        }
-                        else{
-                            Swal.fire({
-                                title: '¡Felicidades!',
-                                text: respuesta.mensaje,
-                                icon: 'success',
-                                //showConfirmButton: false, // Ocultar el botón de confirmación por defecto
-                                //timer: 2000 // Duración en milisegundos (2 segundos)
-                            }).then(function() {
-                                window.location.href = '/admin/payments'; // Redireccionar a prestamos
-                            });
-                        }
+                        Swal.fire({
+                            title: respuesta.titulo,
+                            text: respuesta.mensaje,
+                            icon: respuesta.icono
+                        });
                     },
                     error: function(error) {
                         Swal.fire({
@@ -455,5 +431,10 @@
             }
         });  
     });
+
+    function validarNumero(input) {
+        input.value = input.value.replace(/^\./g, '');  // Asegurar que no comience con un punto decimal
+        input.value = input.value.replace(/^(\d*\.?\d{0,3}).*|[^0-9.]/g, '$1').substr(0, 10);
+    }
 </script>
 <%- include('../layouts/footer') %>

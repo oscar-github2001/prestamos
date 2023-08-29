@@ -14,9 +14,9 @@ router.post('/', isNotLoggedIn, async(req, res, next) => {
     const usuario = req.body.usuario;
     const contrasena = req.body.contrasena;
 
-    rows = await  pool.query('SELECT idrolfk, idusuario, usuario AS nombre, contrasena FROM tblusuarios WHERE usuario = ?', [usuario]);
+    rows = await  pool.query('SELECT idrolfk, idusuario, usuario AS nombre, contrasena FROM tblusuarios WHERE usuario = ? AND estado = 1', [usuario]);
     if(rows.length == 0){
-        rows= await pool.query('SELECT idrolfk, idcliente, nombre, contrasena FROM tblclientes WHERE usuario = ?', [usuario]);
+        rows= await pool.query('SELECT idrolfk, idcliente, nombre, contrasena FROM tblclientes WHERE usuario = ? AND estado = 1', [usuario]);
     }
     if (rows.length > 0) {
         const user = rows[0];
@@ -24,7 +24,7 @@ router.post('/', isNotLoggedIn, async(req, res, next) => {
         console.log(validarContrasena);
         if(validarContrasena){
             req.session.loggedin = true;
-            req.session.usuario = user.idrolFK;
+            req.session.usuario = user.idrolfk;
             req.session.userId  = user.idcliente || user.idusuario;
             req.session.name = user.usuario || user.nombre;
             res.redirect('/admin/');

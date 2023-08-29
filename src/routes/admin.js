@@ -178,14 +178,18 @@ router.post('/update_client', async(req, res) => {
 });
 
 router.post('/update_client_state/:id',/* isLoggedIn,*/ async(req, res) => {
-    await pool.query('CALL pa_actualizar_cliente_estado(?)', [req.params.id], function(error, resultado) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ mensaje: 'Error al actualizar los datos' });
-        } else {
+    try {
+        if((await pool.query('SELECT cliente_pretamos_pend(?) AS cant_prestamos_pend', [req.params.id]))[0].cant_prestamos_pend === 1){
+            res.json({ mensaje: 'No se puede dar de baja al cliente ya que tiene préstamos pendientes'});
+        } else{
+            await pool.query('CALL pa_actualizar_cliente_estado(?)', [req.params.id]);
             res.json({ mensaje: 'Datos actualizados correctamente' });
         }
-    });
+    }
+    catch(error){
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error al actualizar los datos' });
+    }
 });
 
 router.get('/get_client', async(req, res) => {
@@ -427,15 +431,21 @@ router.post('/update_users', /*isLoggedIn,*/ async(req, res) => {
     });
 });
 
-router.post('/update_users_state/:id',/* isLoggedIn,*/ async(req, res) => {
-    await pool.query('CALL pa_actualizar_usuario_estado(?)', [req.params.id], function(error, resultado) {
-        if (error) {
-            console.log(error);
-            res.status(500).json({ mensaje: 'Error al actualizar los datos' });
-        } else {
+router.post('/update_users_state/:id', isLoggedIn, async(req, res) => {
+    try {
+        if(!(req.session.loggedin && req.session.usuario === 1)){
+            res.json({ mensaje: 'Necesitas iniciar sesión como administrador'});
+        } else if(req.session.userId == req.params.id){
+            res.json({ mensaje: 'No puedes dar de baja al usuario con el que haz iniciado sesión'});
+        } else{
+            await pool.query('CALL pa_actualizar_usuario_estado(?)', [req.params.id]);
             res.json({ mensaje: 'Datos actualizados correctamente' });
         }
-    });
+      
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error al actualizar los datos' });
+    }
 });
 
 //Moneda
@@ -1032,44 +1042,55 @@ router.get('/loan', async(req, res) => {
 
 router.post('/loan', async(req, res) => {
     try {
-        const plazo = parseInt(req.body.plazo);
-        const monto = parseFloat(req.body.monto);
-        const fecha_desembolso = req.body.fecha_registro;
-        let codigo = await pool.query('SELECT IFNULL(MAX(idprestamo), 0) + 1 AS max_id FROM tblprestamos;');
-        const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [req.body.interes]);
-        codigo = codigo[0].max_id.toString().padStart(4, '0');
-        let intereses = monto;
-        let sumainterescorriente = 0;
-        for(let i=0; i <  parseInt(plazo); i++){
-            sumainterescorriente += (intereses * valor_interes[0].valor_interes);
-            intereses -= parseFloat(monto/plazo);
+        const patronMonto = /^(\s?)+\d{1,10}(\.{1})?(\d{1,3})?(\s?)+$/;
+        const patronPlazo = /^(\s?)+[1-9]{1,3}(\s?)+$/;
+        if(req.body.fecha_registro > new Date().toISOString().split('T')[0]){
+            res.json({ titulo: 'Fecha de desembolso incorrecta', mensaje: '', icono: 'warning'});
         }
-        const insertar_prestamo =   await pool.query(`CALL pa_insertar_prestamos (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-            codigo, 
-            req.body.tipoprestamo, 
-            req.body.cliente, 
-            req.session.userId, 
-            req.body.interes, 
-            req.body.formapago, 
-            monto, 
-            plazo,
-            sumainterescorriente,
-            req.body.moneda,
-            fecha_desembolso ]);
-        const fecha_registro =  await pool.query (`SELECT fecha_registro FROM tblprestamos WHERE idprestamo = ?`, [insertar_prestamo[0][0].obt_id]);
-        intereses = monto;
-        for(let i=0; i <  parseInt(plazo); i++){
-            await pool.query (`
-            CALL pa_insertar_cuotas (?, ?, ?, ?, ?, ?)`, [ 
-            insertar_prestamo[0][0].obt_id, 
-            i+1, 
-            new Date(fecha_registro[0].fecha_registro.setMonth(fecha_registro[0].fecha_registro.getMonth() + 1)), 
-            parseFloat(monto)/parseInt(plazo),
-            intereses * valor_interes[0].valor_interes,
-            (parseFloat(monto) + parseFloat(sumainterescorriente)) / parseInt(plazo) ]);
-            intereses -= parseFloat(monto)/parseInt(plazo);
+        else if(!patronMonto.test(req.body.monto)){
+            res.json({ titulo: 'Mónto inválido',  mensaje: '', icono: 'warning' });
+        }else if(!patronPlazo.test(req.body.plazo)){
+            res.json({ titulo: 'Plazo inválido',  mensaje: '', icono: 'warning' });
+        } else{
+            const plazo = parseInt(req.body.plazo);
+            let monto = parseFloat(req.body.monto);
+            const fecha_desembolso = req.body.fecha_registro;
+            let codigo = await pool.query('SELECT IFNULL(MAX(idprestamo), 0) + 1 AS max_id FROM tblprestamos;');
+            const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [req.body.interes]);
+            codigo = codigo[0].max_id.toString().padStart(4, '0');
+            let intereses = monto;
+            let sumainterescorriente = 0;
+            for(let i=0; i <  parseInt(plazo); i++){
+                sumainterescorriente += (intereses * valor_interes[0].valor_interes);
+                intereses -= parseFloat(monto/plazo);
+            }
+            const insertar_prestamo =   await pool.query(`CALL pa_insertar_prestamos (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+                codigo, 
+                req.body.tipoprestamo, 
+                req.body.cliente, 
+                req.session.userId, 
+                req.body.interes, 
+                req.body.formapago, 
+                monto, 
+                plazo,
+                sumainterescorriente,
+                req.body.moneda,
+                fecha_desembolso ]);
+            const fecha_registro =  await pool.query (`SELECT fecha_registro FROM tblprestamos WHERE idprestamo = ?`, [insertar_prestamo[0][0].obt_id]);
+            intereses = monto;
+            for(let i=0; i <  parseInt(plazo); i++){
+                await pool.query (`
+                CALL pa_insertar_cuotas (?, ?, ?, ?, ?, ?)`, [ 
+                insertar_prestamo[0][0].obt_id, 
+                i+1, 
+                new Date(fecha_registro[0].fecha_registro.setMonth(fecha_registro[0].fecha_registro.getMonth() + 1)), 
+                parseFloat(monto)/parseInt(plazo),
+                intereses * valor_interes[0].valor_interes,
+                (parseFloat(monto) + parseFloat(sumainterescorriente)) / parseInt(plazo) ]);
+                intereses -= parseFloat(monto)/parseInt(plazo);
+            }
+            res.json({ titulo: 'Prestamo registrado',  mensaje: 'Datos guardados correctamente', icono: 'success' });
         }
-        res.json({ mensaje: 'Datos guardados correctamente' });
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al guardar los datos' });
@@ -1343,72 +1364,82 @@ router.post("/get_payments_quotas", async(req, res) => {
 
 router.post("/payments_quotas", async (req, res) => {
     try {
-        let pago = parseFloat(parseFloat(req.body.det_pago).toFixed(3));
-        let total_descuento = parseFloat(req.body.det_saldo_descuento.split(" ")[1]);
-        let descuento_x_pago = parseFloat(parseFloat(req.body.det_descuento || 0).toFixed(3));
-        const idprestamo = req.body.det_idprestamo;
-        pago += descuento_x_pago;
-        const resultado = await pool.query(`SELECT validar_monto_exacto_pagar(?, ?) AS validar_monto_exacto_pagar`, [idprestamo, pago]);
-        if (resultado[0].validar_monto_exacto_pagar === 1) {
-            res.json({ mensaje: 'La cantidad ingresada es mayor a lo que debes en el prestamo' });
-        } else {
-            if (descuento_x_pago != 0) {
-                await pool.query('INSERT INTO tbldescuento (descuento, idprestamoFK) VALUES (?, ?)', [descuento_x_pago, idprestamo]);
-            }
-            const cuota_pago = await pool.query(`
-                SELECT 
-                    C.abono AS abono,
-                    C.estado AS estado,
-                    C.idcuota AS idcuota
-                FROM tblcuotas AS C
-                INNER JOIN tblprestamos AS P ON C.idprestamoFK = P.idprestamo
-                WHERE P.idprestamo = ?`, [idprestamo]);
-  
-            for (let i = 0; i < cuota_pago.length; i++) {
-                const pago_x_cuota = await pool.query(`
-                SELECT 
-                    IFNULL(SUM(PO.pago), 0) AS pago_x_cuota
-                FROM tblcuotas AS C 
-                LEFT JOIN tblpagos AS PO ON C.idcuota = PO.idcuotaFK
-                WHERE C.idcuota = ?;
-                `, [cuota_pago[i].idcuota]);
-              
-                if (cuota_pago[i].estado === 1) {
-                    if (pago >= parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
-                        await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 2]);
-                        await pool.query('CALL pa_insertar_pagos (?, ?)', [cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota, cuota_pago[i].idcuota]);
-        
-                        if (pago === parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+        const patronMonto = /^(\s?)+(\d{1,10}(\.{1})?(\d{1,3})?)?(\s?)+$/;
+        console.log(req.body.det_descuento)
+        if(req.body.det_pago === "" || req.body.det_pago === "0"){
+            res.json({ titulo: 'No hay asignado ningún monto', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronMonto.test(req.body.det_pago)){
+            res.json({ titulo: 'Monto pago inválido',  mensaje: '', icono: 'warning' });
+        }else if(!patronMonto.test(req.body.det_descuento.replace(/\s+/g, ""))){
+            res.json({ titulo: 'Monto descuento inválido',  mensaje: '', icono: 'warning' })
+        } else{
+            let pago = parseFloat(parseFloat(req.body.det_pago).toFixed(3));
+            let descuento_x_pago = parseFloat(parseFloat(req.body.det_descuento || 0).toFixed(3));
+            const idprestamo = req.body.det_idprestamo;
+            pago += descuento_x_pago;
+            const resultado = await pool.query(`SELECT validar_monto_exacto_pagar(?, ?) AS validar_monto_exacto_pagar`, [idprestamo, pago]);
+            if (resultado[0].validar_monto_exacto_pagar === 1) {
+                res.json({ titulo: 'La cantidad ingresada es mayor a lo que debes en el prestamo',  mensaje: '', icono: 'warning' })
+            } else {
+                if (descuento_x_pago != 0) {
+                    await pool.query('INSERT INTO tbldescuento (descuento, idprestamoFK) VALUES (?, ?)', [descuento_x_pago, idprestamo]);
+                }
+                const cuota_pago = await pool.query(`
+                    SELECT 
+                        C.abono AS abono,
+                        C.estado AS estado,
+                        C.idcuota AS idcuota
+                    FROM tblcuotas AS C
+                    INNER JOIN tblprestamos AS P ON C.idprestamoFK = P.idprestamo
+                    WHERE P.idprestamo = ?`, [idprestamo]);
+    
+                for (let i = 0; i < cuota_pago.length; i++) {
+                    const pago_x_cuota = await pool.query(`
+                    SELECT 
+                        IFNULL(SUM(PO.pago), 0) AS pago_x_cuota
+                    FROM tblcuotas AS C 
+                    LEFT JOIN tblpagos AS PO ON C.idcuota = PO.idcuotaFK
+                    WHERE C.idcuota = ?;
+                    `, [cuota_pago[i].idcuota]);
+                
+                    if (cuota_pago[i].estado === 1) {
+                        if (pago >= parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                            await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 2]);
+                            await pool.query('CALL pa_insertar_pagos (?, ?)', [cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota, cuota_pago[i].idcuota]);
+            
+                            if (pago === parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                                break;
+                            }
+                            pago = parseFloat((pago - (cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota)).toFixed(3));
+                        } else if (pago < parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                            await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 3]);
+                            await pool.query('CALL pa_insertar_pagos (?, ?)', [pago, cuota_pago[i].idcuota]);
                             break;
                         }
-                        pago = parseFloat((pago - (cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota)).toFixed(3));
-                    } else if (pago < parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
-                        await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 3]);
-                        await pool.query('CALL pa_insertar_pagos (?, ?)', [pago, cuota_pago[i].idcuota]);
-                        break;
+                    } else if (cuota_pago[i].estado === 3) {
+                        if (pago >= parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                            await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 2]);
+                            await pool.query('CALL pa_insertar_pagos (?, ?)', [cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota, cuota_pago[i].idcuota]);
+                            if (pago === parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                                break;
+                            }
+                            pago = parseFloat((pago - (cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota)).toFixed(3));
+                        } else if (pago < parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
+                            await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 3]);
+                            await pool.query('CALL pa_insertar_pagos (?, ?)', [pago, cuota_pago[i].idcuota]);
+                            break;
+                        }
                     }
-                } else if (cuota_pago[i].estado === 3) {
-                    if (pago >= parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
-                        await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 2]);
-                        await pool.query('CALL pa_insertar_pagos (?, ?)', [cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota, cuota_pago[i].idcuota]);
-                    if (pago === parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
-                        break;
-                    }
-                    pago = parseFloat((pago - (cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota)).toFixed(3));
-                } else if (pago < parseFloat((cuota_pago[i].abono -  pago_x_cuota[0].pago_x_cuota).toFixed(3))) {
-                    await pool.query(`CALL pa_actualizar_cuotas_estado (?, ?)`, [cuota_pago[i].idcuota, 3]);
-                    await pool.query('CALL pa_insertar_pagos (?, ?)', [pago, cuota_pago[i].idcuota]);
-                    break;
+                }
+                const estado_prestamo = await pool.query(`SELECT estado FROM tblprestamos WHERE idprestamo = ?`, [idprestamo]);
+                if (estado_prestamo[0].estado === '0') {
+                    res.json({ titulo: '¡Felicidades!', mensaje: 'Cuotas canceladas', icono: 'success'});
+                } else {
+                    res.json({ titulo: 'Pagos registrados', mensaje: 'Datos guardados correctamente', icono: 'success'});
                 }
             }
         }
-        const estado_prestamo = await pool.query(`SELECT estado FROM tblprestamos WHERE idprestamo = ?`, [idprestamo]);
-        if (estado_prestamo[0].estado === '0') {
-            res.json({ mensaje: 'Cuotas canceladas' });
-        } else {
-            res.json({ mensaje: 'Datos guardados correctamente' });
-        }
-      }
     } catch (error) {
       console.log(error);
       res.status(500).json({ mensaje: 'Error al guardar el pago' });
@@ -1419,8 +1450,7 @@ router.get('/graph_loan/:fecha', async(req, res) => {
     try {
         const ganancia_mes = await pool.query(`
         SELECT 
-            CONCAT(YEAR(C.fecha_pago), '-', 
-            CASE MONTH(C.fecha_pago)
+            CONCAT(CASE MONTH(C.fecha_pago)
             WHEN 1 THEN 'Ene'
             WHEN 2 THEN 'Feb'
             WHEN 3 THEN 'Mar'
@@ -1433,20 +1463,19 @@ router.get('/graph_loan/:fecha', async(req, res) => {
             WHEN 10 THEN 'Oct'
             WHEN 11 THEN 'Nov'
             WHEN 12 THEN 'Dic'
-            END) AS año_mes,
+            END) AS mes,
         ROUND(SUM(CASE WHEN M.simbolo = 'C$' THEN P.intereses / P.plazo ELSE 0 END), 3)AS ganancia_mes_cordoba,
         ROUND(SUM(CASE WHEN M.simbolo = '$' THEN P.intereses / P.plazo ELSE 0 END), 3) AS ganancia_mes_dolar
         FROM tblprestamos AS P 
         INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
         INNER JOIN tblcuotas AS C ON P.idprestamo = C.idprestamoFK
         WHERE YEAR(C.fecha_pago) = ?
-        GROUP BY YEAR(C.fecha_pago), MONTH(C.fecha_pago)
+        GROUP BY  MONTH(C.fecha_pago)
         ORDER BY C.fecha_pago ASC;`, [req.params.fecha]);
       
         const monto_prestado_mes = await pool.query(`
         SELECT 
-            CONCAT(YEAR(P.fecha_registro), '-', 
-            CASE MONTH(P.fecha_registro)
+            CONCAT(CASE MONTH(P.fecha_registro)
             WHEN 1 THEN 'Ene'
             WHEN 2 THEN 'Feb'
             WHEN 3 THEN 'Mar'
@@ -1459,13 +1488,13 @@ router.get('/graph_loan/:fecha', async(req, res) => {
             WHEN 10 THEN 'Oct'
             WHEN 11 THEN 'Nov'
             WHEN 12 THEN 'Dic'
-            END) AS año_mes,
+            END) AS mes,
         ROUND(SUM(CASE WHEN M.simbolo = 'C$' THEN P.monto ELSE 0 END), 3)AS prestamo_cordoba,
         ROUND(SUM(CASE WHEN M.simbolo = '$' THEN P.monto ELSE 0 END), 3) AS prestamo_dolar
         FROM tblprestamos AS P 
         INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
         WHERE YEAR(P.fecha_registro) = ?
-        GROUP BY YEAR(P.fecha_registro), MONTH(P.fecha_registro)
+        GROUP BY MONTH(P.fecha_registro)
         ORDER BY P.fecha_registro ASC;`, [req.params.fecha]);
         res.json({ganancia_mes, monto_prestado_mes});   
     } catch (error) {
@@ -1483,28 +1512,57 @@ var obtener_detalle_prest = {
     "filtrar_todo": [],
     "total_todo": []
 };
+
+const detalle_prestamo = async (f_inicio, f_fin) => {
+    return  await pool.query(`
+    SELECT 
+        P.codigo AS codigo_prestamo,
+        CONCAT(CL.nombre, ' ', CL.apellido)AS nombre,
+        DATE_FORMAT(P.fecha_registro, '%Y-%m-%d') AS fecha_desembolso,
+        DATE_FORMAT(P.fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
+        DATE_FORMAT(P.fecha_fin, '%Y-%m-%d') AS fecha_fin,
+        IF(M.simbolo = 'C$', CONCAT(M.simbolo, '', P.monto), '-') AS monto_cordoba,
+        IF(M.simbolo = '$', CONCAT(M.simbolo, '', P.monto), '-') AS monto_dolar,
+        IF(P.plazo = 1, CONCAT(P.plazo,' mes'), CONCAT(P.plazo,' meses')) AS plazo,
+        CONCAT(ROUND(I.descripcion, 1), '%') AS taza_intereses,
+        IF(M.simbolo = 'C$', CONCAT(M.simbolo, '', P.intereses), '-') AS intereses_cordoba,
+        IF(M.simbolo = '$', CONCAT(M.simbolo,'', P.intereses), '-') AS intereses_dolar,
+        IF(M.simbolo = 'C$', CONCAT(M.simbolo, '', P.intereses + P.monto), '-') AS total_cordoba,
+        IF(M.simbolo = '$', CONCAT(M.simbolo, '', P.intereses + P.monto), '-') AS total_dolar
+    FROM tblprestamos AS P 
+    INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
+    INNER JOIN tblclientes AS CL ON P.idclienteFK = CL.idcliente
+    INNER JOIN tblintereses AS I ON P.idinteresFK = I.idinteres
+    WHERE P.fecha_registro BETWEEN ? AND ?
+    GROUP BY P.idprestamo
+    ORDER BY  fecha_desembolso;`, [f_inicio, f_fin]);
+}
+
+const obtener_detalle_total_prestamo = async (f_inicio, f_fin, simbolo) => {
+    return await pool.query(`
+    SELECT 
+        IFNULL(CONCAT(M.simbolo, '', SUM(P.monto)), 0) AS monto,
+        IFNULL(CONCAT(M.simbolo, '', SUM(P.intereses)), 0) AS intereses,
+        IFNULL(CONCAT(M.simbolo, '', SUM(P.intereses + P.monto)), 0) AS total
+    FROM tblprestamos AS P 
+    INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
+    WHERE M.simbolo = ? AND P.fecha_registro BETWEEN ? AND ?;
+    `, [simbolo, f_inicio, f_fin]);
+}
+
 router.get('/filter-excel', async (req, res) => {
     try {
-        const detalle_prestamo = await pool.query(`CALL Filtrar_Detalle_Prestamos(?, ?)`, [req.query.fecha_inicio, req.query.fecha_fin]);
-        const obtener_detalle_total_prestamo = async (f_inicio, f_fin, simbolo) => {
-            return await pool.query(`
-            SELECT 
-                IFNULL(CONCAT(M.simbolo, '', SUM(P.monto)), 0) AS monto,
-                IFNULL(CONCAT(M.simbolo, '', SUM(P.intereses)), 0) AS intereses,
-                IFNULL(CONCAT(M.simbolo, '', SUM(P.intereses + P.monto)), 0) AS total
-            FROM tblprestamos AS P 
-            INNER JOIN tblmoneda AS M ON P.idmonedaFK = M.idmoneda
-            WHERE M.simbolo = ? AND P.fecha_registro BETWEEN ? AND ?;
-            `, [simbolo, f_inicio, f_fin]);
+        if(req.query.fecha_inicio === "" || req.query.fecha_fin === ""){
+            res.json({ titulo: 'Una o las dos fechas están incorrectas', mensaje: '', icono: 'warning'});
+        } 
+        else if (req.query.fecha_inicio >= req.query.fecha_fin){
+            res.json({ titulo: 'Filtrado de fechas incorrecto', mensaje: '', icono: 'warning'});
+        }else {
+            const obt_detalle_prestamo =  await detalle_prestamo(req.query.fecha_inicio, req.query.fecha_fin);
+            const detalle_total_prestamo_dolar = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, '$');
+            const detalle_total_prestamo_cordoba = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, 'C$');
+            res.json({obt_detalle_prestamo, detalle_total_prestamo_dolar, detalle_total_prestamo_cordoba});
         }
-        for(let i = 0; i< detalle_prestamo[0].length; i++){
-            obtener_detalle_prest.filtrar_todo.push(detalle_prestamo[0]);
-        }
-        const detalle_total_prestamo_dolar = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, '$');
-        const detalle_total_prestamo_cordoba = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, 'C$');
-        obtener_detalle_prest.total_todo.push(detalle_total_prestamo_dolar[0], detalle_total_prestamo_cordoba[0]);
-        res.json({detalle_prestamo, detalle_total_prestamo_dolar, detalle_total_prestamo_cordoba});
-    
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al obtener los datos' });
@@ -1513,134 +1571,135 @@ router.get('/filter-excel', async (req, res) => {
 
 router.get('/generar-excel', async (req, res) => {
     try {
-        const workbook = new Excel.Workbook();
-        const worksheet = workbook.addWorksheet('Detalle Prestamos');
+        if(req.query.fecha_inicio === "" || req.query.fecha_fin === ""){
+            res.json({ titulo: 'Una o las dos fechas están incorrectas', mensaje: '', icono: 'warning'});
+        } else {
+            const workbook = new Excel.Workbook();
+            const worksheet = workbook.addWorksheet('Detalle Prestamos');
+        
+            // Estilo para el encabezado
+            const headerStyle = {
+                font: { bold: true, size: 14, color: { argb: 'FF00008B' } }, // ARGB format: FF + Blue + Green + Red
+                alignment: { vertical: 'middle', horizontal: 'center' },
+                border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+                fill: {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'FFFFFFFF' }
+                },
+            };
+            // Estilo para el contenido de la tabla
+            const contentStyle = {
+                alignment: { vertical: 'middle', horizontal: 'center' },
+                font: { size: 13, bold: false },
+                border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
+            };
+        
+            const subheaders = [
+                ['#', 'Código', 'Cliente', 'Fecha desembolso', 'Fechas de cuotas', '', 'Principal', '', 'Plazo/Meses', 'Tasa interés', 'Intereses', '', 'Totales', ''],
+                ['', '', '', '', 'Inicio', 'Fin', 'C$', '$', '', '', 'C$', '$', 'C$', '$'],
+            ];
     
-        // Estilo para el encabezado
-        const headerStyle = {
-            font: { bold: true, size: 14, color: { argb: 'FF00008B' } }, // ARGB format: FF + Blue + Green + Red
-            alignment: { vertical: 'middle', horizontal: 'center' },
-            border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
-            fill: {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'FFFFFFFF' }
-            },
-        };
-
-        // Estilo para el contenido de la tabla
-        const contentStyle = {
-            alignment: { vertical: 'middle', horizontal: 'center' },
-            font: { size: 13, bold: false },
-            border: { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } },
-        };
-    
-        const subheaders = [
-            ['#', 'Código', 'Cliente', 'Fecha desembolso', 'Fechas de cuotas', '', 'Principal', '', 'Plazo/Meses', 'Tasa interés', 'Intereses', '', 'Totales', ''],
-            ['', '', '', '', 'Inicio', 'Fin', 'C$', '$', '', '', 'C$', '$', 'C$', '$'],
-        ];
-
-        // Insert two blank rows before the subheaders
-        worksheet.insertRow(1, []);
-        worksheet.insertRow(2, []);
-    
-        subheaders.forEach((subheader) => {
-            const row = worksheet.addRow(subheader);
-            row.eachCell((cell) => {
-                cell.style = headerStyle; // Aplica el estilo del encabezado a las celdas del encabezado
+            // Insert two blank rows before the subheaders
+            worksheet.insertRow(1, []);
+            worksheet.insertRow(2, []);
+        
+            subheaders.forEach((subheader) => {
+                const row = worksheet.addRow(subheader);
+                row.eachCell((cell) => {
+                    cell.style = headerStyle; // Aplica el estilo del encabezado a las celdas del encabezado
+                });
             });
-        });
-        
-        // Horizontal
-        worksheet.mergeCells('A3:A4'); 
-        worksheet.mergeCells('B3:B4');
-        worksheet.mergeCells('C3:C4');
-        worksheet.mergeCells('D3:D4');
-        worksheet.mergeCells('I3:I4'); 
-        worksheet.mergeCells('J3:J4'); 
-        // Vertical
-        worksheet.mergeCells('E3:F3');
-        worksheet.mergeCells('G3:H3');
-        worksheet.mergeCells('K3:L3');
-        worksheet.mergeCells('M3:N3');
-        
-        // Obtener los datos de la tabla desde la variable obtener_detalle_prest.filtrar_todo
-        const detallePrestamoData = obtener_detalle_prest.filtrar_todo[0];
+            // Horizontal
+            worksheet.mergeCells('A3:A4'); 
+            worksheet.mergeCells('B3:B4');
+            worksheet.mergeCells('C3:C4');
+            worksheet.mergeCells('D3:D4');
+            worksheet.mergeCells('I3:I4'); 
+            worksheet.mergeCells('J3:J4'); 
+            // Vertical
+            worksheet.mergeCells('E3:F3');
+            worksheet.mergeCells('G3:H3');
+            worksheet.mergeCells('K3:L3');
+            worksheet.mergeCells('M3:N3');
     
-        // Agregar los datos de la tabla al archivo Excel
-        let contador = 1;
-        for (item of detallePrestamoData) {
-            const row = worksheet.addRow([
-                contador++,
-                item.codigo_prestamo,
-                item.nombre,
-                item.fecha_desembolso,
-                item.fecha_inicio,
-                item.fecha_fin,
-                item.monto_cordoba,
-                item.monto_dolar,
-                item.plazo,
-                item.taza_intereses,
-                item.intereses_cordoba,
-                item.intereses_dolar,
-                item.total_cordoba,
-                item.total_dolar,
+            const obt_detalle_prestamo =  await detalle_prestamo(req.query.fecha_inicio, req.query.fecha_fin);
+            const detalle_total_prestamo_dolar = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, '$');
+            const detalle_total_prestamo_cordoba = await obtener_detalle_total_prestamo(req.query.fecha_inicio, req.query.fecha_fin, 'C$');
+            let contador = 1;
+            for (item of obt_detalle_prestamo) {
+                const row = worksheet.addRow([
+                    contador++,
+                    item.codigo_prestamo,
+                    item.nombre,
+                    item.fecha_desembolso,
+                    item.fecha_inicio,
+                    item.fecha_fin,
+                    item.monto_cordoba,
+                    item.monto_dolar,
+                    item.plazo,
+                    item.taza_intereses,
+                    item.intereses_cordoba,
+                    item.intereses_dolar,
+                    item.total_cordoba,
+                    item.total_dolar,
+                ]);
+    
+                row.eachCell((cell) => {
+                    cell.style = contentStyle; // Aplica el estilo del contenido a las celdas del contenido de la tabla
+                });
+            }
+            worksheet.addRow([
+                'Total',
+                '',
+                '',
+                '',
+                '',
+                '',
+                detalle_total_prestamo_cordoba[0].monto,
+                detalle_total_prestamo_dolar[0].monto,
+                '',
+                '',
+                detalle_total_prestamo_cordoba[0].intereses,
+                detalle_total_prestamo_dolar[0].intereses,
+                detalle_total_prestamo_cordoba[0].total,
+                detalle_total_prestamo_dolar[0].total
             ]);
-
-            row.eachCell((cell) => {
-                cell.style = contentStyle; // Aplica el estilo del contenido a las celdas del contenido de la tabla
+    
+            // Aplica el estilo del contenido a las celdas de la última fila (Total)
+            worksheet.lastRow.eachCell((cell) => {
+                cell.style = contentStyle;
+            });
+    
+            // Configurar el ancho de las columnas basado en el contenido
+            worksheet.columns.forEach((column) => {
+                let maxLength = 0;
+                column.eachCell({ includeEmpty: false }, (cell) => {
+                    let columnLength = 0;
+                    if (cell.value !== null && cell.value !== undefined) {
+                        columnLength = cell.value.toString().length;
+                    }
+                    if (columnLength > maxLength) {
+                        maxLength = columnLength;
+                    }
+                });
+                if (maxLength < 25) {
+                    column.width = 25;
+                } else {
+                    column.width = maxLength + 5;
+                }
+            });
+            
+            // Definir el nombre del archivo Excel
+            const excelFileName = 'detalle_prestamos.xlsx';
+        
+            // Enviar el archivo Excel como descarga al cliente
+            res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            res.setHeader('Content-Disposition', 'attachment; filename=' + excelFileName);
+            return workbook.xlsx.write(res).then(() => {
+                res.status(200).end();
             });
         }
-        worksheet.addRow([
-            'Total',
-            '',
-            '',
-            '',
-            '',
-            '',
-            obtener_detalle_prest.total_todo[1].monto,
-            obtener_detalle_prest.total_todo[0].monto,
-            '',
-            '',
-            obtener_detalle_prest.total_todo[1].intereses,
-            obtener_detalle_prest.total_todo[0].intereses,
-            obtener_detalle_prest.total_todo[1].total,
-            obtener_detalle_prest.total_todo[0].total
-        ]);
-
-        // Aplica el estilo del contenido a las celdas de la última fila (Total)
-        worksheet.lastRow.eachCell((cell) => {
-            cell.style = contentStyle;
-        });
-
-        // Configurar el ancho de las columnas basado en el contenido
-        worksheet.columns.forEach((column) => {
-            let maxLength = 0;
-            column.eachCell({ includeEmpty: false }, (cell) => {
-                let columnLength = 0;
-                if (cell.value !== null && cell.value !== undefined) {
-                    columnLength = cell.value.toString().length;
-                }
-                if (columnLength > maxLength) {
-                    maxLength = columnLength;
-                }
-            });
-            if (maxLength < 25) {
-                column.width = 25;
-            } else {
-                column.width = maxLength + 5;
-            }
-        });
-        
-        // Definir el nombre del archivo Excel
-        const excelFileName = 'detalle_prestamos.xlsx';
-    
-        // Enviar el archivo Excel como descarga al cliente
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=' + excelFileName);
-        return workbook.xlsx.write(res).then(() => {
-            res.status(200).end();
-        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al generar el archivo Excel' });
@@ -1673,7 +1732,7 @@ async function generarCopiaDeSeguridad() {
 }
 
 // Programar la tarea cron para realizar la copia de seguridad semanalmente los domingos a las 3 AM
-const cronExpression = '02 18 * * 1';
+const cronExpression = '56 16 * * *';
 const job = new CronJob(cronExpression, async () => {
     try {
         const backupPath = await generarCopiaDeSeguridad();
