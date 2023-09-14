@@ -12,31 +12,34 @@
         <div class="col-md-4">
             <div class="form-group mb-2">
                 <label for="nombre" class="form-label">Nombre:</label>
-                <input type="text" class="form-control form-control-sm" id="nombre" name="nombre" autofocus required
+                <input type="text" class="form-control form-control-sm" id="nombre" name="nombre" autofocus
+                pattern="^(\s?)+[A-Za-zÁÉÍÓÚáéíóú]+(\s?)([A-Za-zÁÉÍÓÚáéíóú]?)+?(\s?)+$" required title="Ingrese nombres válidos"
                     placeholder="nombre">
             </div>
             <div class="form-group mb-2">
                 <label for="apellido" class="form-label">Apellido:</label>
-                <input type="text" class="form-control form-control-sm" id="apellido" name="apellido" required
-                    placeholder="apellido">
+                <input type="text" class="form-control form-control-sm" id="apellido" name="apellido" 
+                pattern="^(\s?)+[A-Za-zÁÉÍÓÚáéíóú]+(\s?)([A-Za-zÁÉÍÓÚáéíóú]?)+?(\s?)+$" required title="Ingrese apellidos válidos"placeholder="apellido">
             </div>
             <div class="form-group mb-2">
                 <label for="celuda" class="form-label">Cédula:</label>
-                <input type="text" class="form-control form-control-sm" id="cedula" name="cedula" required placeholder="Cédula">
+                <input type="text" class="form-control form-control-sm" id="cedula" name="cedula" placeholder="Cédula"
+                pattern="^(^$)|(^(\s?)+\d{3}(0[0-9](0[0-9]|1[0-2])[0-9][0-9]|1[0-9](0[0-9]|1[0-2])[0-9][0-9]|(2[0-9](01)|2[0-8](02)|2[0-9](03)|2[0-9](04)|2[0-9](05)||2[0-9](06)|2[0-9](07)|2[0-9](08)|2[0-9](09)|2[0-9](10)|2[0-9](11)|2[0-9](12))[0-9][0-9]|(3[0-1](01)|3[0-1](03)|3[0](04)|3[0-1](05)|3[0](06)|3[0-1](07)|3[0-1](08)|3[0](09)|3[0-1](10)|3[0](11)|3[0-1](12))[0-9][0-9])\d{4}[A-Z]{1}(\s?)+$)$"
+                required title="Ingrese #cédula válido">
             </div>
         
             <div class="form-group mb-2">
                 <label for="celular" class="form-label">Celular:</label>
-                <input type="text" class="form-control form-control-sm" id="celular" name="celular" required placeholder="Celular">
+                <input type="text" class="form-control form-control-sm" id="celular" name="celular" placeholder="Celular"
+                pattern="^(\s?)+[0-9]{1,11}(\s?)+$" required title="Ingrese #celular válido">
             </div>
         </div>
         <div class="col-md-4">
             <div class="form-group mb-2">
                 <label for="direccion" class="form-label">Direccion:</label>
-                <input type="text" class="form-control form-control-sm" id="direccion" name="direccion" required
-                    placeholder="Direccion">
+                <input type="text" class="form-control form-control-sm" id="direccion" name="direccion" 
+                pattern="^(\s?)+([\wáéíóú(\s),]){1,50}(\s?)+$" required title="Ingrese dirección válido" placeholder="Direccion">
             </div>
-
             <div class="form-group mb-2">
                 <label for="fecha_nacimiento" class="form-label">Fecha de Nacimiento:</label>
                 <input type="date" class="form-control form-control-sm" id="fecha_nacimiento" name="fecha_nacimiento" required
@@ -44,15 +47,15 @@
             </div>
             <div class="form-group mb-2">
                 <label for="estado_civil" class="form-label">Estado Civil</label>
-                <input type="text" class="form-control form-control-sm" id="estado_civil" name="estado_civil" required
-                    placeholder="Estado Civil">
+                <input type="text" class="form-control form-control-sm" id="estado_civil" name="estado_civil"
+                pattern="^(\s?)+([A-Za-záéíóú]){1,7}(\s?)+$" required title="Ingrese estado civil válido" placeholder="Estado Civil">
             </div>
             <div class="form-group mb-2">
                 <label for="sexo" class="form-label">Sexo</label>
                 <div class="form-group">
-                    <input type="radio" name="sexo" id="masculino" value="masculine" class="form-check-input">
+                    <input type="radio" name="sexo" id="masculino" value="masculine" class="form-check-input" required>
                     <label for="masculino" class="form-check-label">Masculino</label>
-                    <input type="radio" name="sexo" id="femenino" value="femenine" class="form-check-input">
+                    <input type="radio" name="sexo" id="femenino" value="femenine" class="form-check-input" required>
                     <label for="femenino" class="form-check-label">Femenino</label>
                 </div>
             </div>
@@ -70,14 +73,14 @@
             <div class="form-group mb-2">
                 <label for="usuario" class="form-label">Correo:</label>
                 <div class="input-group mb-2">
-                    <input type="text" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="usuario" id="usuario">
+                    <input type="email" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="usuario" id="usuario">
                     <span class="input-group-text" id="basic-addon2">@example.com</span>
                 </div>
             </div>
             <div class="form-group mb-2">
                 <label for="contrasena" class="form-label">Contraseña</label>
-                <input type="password" class="form-control form-control-sm" id="contrasena" name="contrasena" required
-                    placeholder="Contraseña">
+                <input type="password" class="form-control form-control-sm" id="contrasena" name="contrasena"
+                pattern="^([\s]*)\w{3,12}(\s*)$" required title="Ingrese contraseña válida"    placeholder="Contraseña">
             </div>
         </div>
         <div class="col-md-2">
@@ -111,11 +114,7 @@
         <div class="col-md-4">
             <div class="form-group mb-2">
                 <label for="salario" class="form-label">Salario</label>
-                <div class="input-group mb-2">
-                    <span class="input-group-text">$</span>
-                    <input id="salario" name="salario" type="text" class="form-control form-control-sm" aria-label="Amount (to the nearest dollar)">
-                    <span class="input-group-text">.00</span>
-                </div>
+                <input id="salario" name="salario" type="text" class="form-control form-control-sm">
             </div>
             <div class="form-group mb-2">
                 <label for="telefono_trabajo" class="form-label">Teléfono del Trabajo</label>
@@ -252,29 +251,32 @@
                         <input type="hidden" name="act_idcliente">
                         <div class="form-group mb-2">
                             <label for="act_nombre" class="form-label">Nombre:</label>
-                            <input type="text" class="form-control form-control-sm" id="act_nombre" name="act_nombre" autofocus required
-                                placeholder="nombre">
+                            <input type="text" class="form-control form-control-sm" id="act_nombre" name="act_nombre" autofocus
+                            pattern="^(\s?)+[A-Za-zÁÉÍÓÚáéíóú]+(\s?)([A-Za-zÁÉÍÓÚáéíóú]?)+?(\s?)+$" required title="Ingrese nombres válidos" placeholder="nombre">
                         </div>  
                     </div>
                     <div class="col-md-6">
                         <div class="form-group mb-2">
                             <label for="act_apellido" class="form-label">Apellido:</label>
-                            <input type="text" class="form-control form-control-sm" id="act_apellido" name="act_apellido" required
-                                placeholder="apellido">
+                            <input type="text" class="form-control form-control-sm" id="act_apellido" name="act_apellido"
+                            pattern="^(\s?)+[A-Za-zÁÉÍÓÚáéíóú]+(\s?)([A-Za-zÁÉÍÓÚáéíóú]?)+?(\s?)+$" required title="Ingrese apellidos válidos"   placeholder="apellido">
                         </div>
                         <div class="form-group mb-2">
                             <label for="act_cedula" class="form-label">Cédula:</label>
-                            <input type="text" class="form-control form-control-sm" id="act_cedula" name="act_cedula" required placeholder="Cédula">
+                            <input type="text" class="form-control form-control-sm" id="act_cedula" name="act_cedula"
+                            pattern="^(^$)|(^(\s?)+\d{3}(0[0-9](0[0-9]|1[0-2])[0-9][0-9]|1[0-9](0[0-9]|1[0-2])[0-9][0-9]|(2[0-9](01)|2[0-8](02)|2[0-9](03)|2[0-9](04)|2[0-9](05)||2[0-9](06)|2[0-9](07)|2[0-9](08)|2[0-9](09)|2[0-9](10)|2[0-9](11)|2[0-9](12))[0-9][0-9]|(3[0-1](01)|3[0-1](03)|3[0](04)|3[0-1](05)|3[0](06)|3[0-1](07)|3[0-1](08)|3[0](09)|3[0-1](10)|3[0](11)|3[0-1](12))[0-9][0-9])\d{4}[A-Z]{1}(\s?)+$)$"
+                            required title="Ingrese #cédula válido" placeholder="Cédula">
                         </div>
                         <div class="form-group mb-2">
                             <label for="act_celular" class="form-label">Celular:</label>
-                            <input type="text" class="form-control form-control-sm" id="act_celular" name="act_celular" required placeholder="Celular">
+                            <input type="text" class="form-control form-control-sm" id="act_celular" name="act_celular"
+                            pattern="^(\s?)+[0-9]{1,11}(\s?)+$" required title="Ingrese #celular válido" placeholder="Celular">
                         </div>
 
                         <div class="form-group mb-2">
                             <label for="act_direccion" class="form-label">Direccion:</label>
-                            <input type="text" class="form-control form-control-sm" id="act_direccion" name="act_direccion" required
-                                placeholder="Direccion">
+                            <input type="text" class="form-control form-control-sm" id="act_direccion" name="act_direccion"
+                            pattern="^(\s?)+([\wáéíóú(\s),]){1,50}(\s?)+$" required title="Ingrese dirección válido" placeholder="Direccion">
                         </div>
                         <div class="form-group mb-2">
                             <label for="act_fecha_nacimiento" class="form-label">Fecha de Nacimiento:</label>
@@ -294,8 +296,8 @@
                         </div>
                         <div class="form-group mb-2">
                             <label for="act_estado_civil" class="form-label">Estado Civil</label>
-                            <input type="text" class="form-control form-control-sm" id="act_estado_civil" name="act_estado_civil" required
-                                placeholder="Estado Civil">
+                            <input type="text" class="form-control form-control-sm" id="act_estado_civil" name="act_estado_civil"
+                            pattern="^(\s?)+([A-Za-záéíóú]){1,7}(\s?)+$" required title="Ingrese estado civil válido" placeholder="Estado Civil">
                         </div> 
                         <div class="form-group mb-2">
                             <label for="act_idciudadFK" class="form-label">Ciudad</label>
@@ -305,7 +307,7 @@
                         <div class="form-group mb-2">
                             <label for="act_usuario" class="form-label">Correo:</label>
                             <div class="input-group mb-2">
-                                <input type="text" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="act_usuario" id="act_usuario"">
+                                <input type="email" class="form-control form-control-sm" placeholder="Correo" aria-label="Recipient's username" aria-describedby="basic-addon2" name="act_usuario" id="act_usuario"">
                                 <span class="input-group-text" id="basic-addon2">@example.com</span>
                             </div>
                         </div>
@@ -408,19 +410,14 @@
             data: datosFormulario,
             dataType: 'json',
             success: function(respuesta) {
-                if(respuesta.mensaje === "Datos guardados correctamente"){
-                    $('#tabla_cliente').DataTable().ajax.reload();
-                    Swal.fire({
-                        title: 'Cliente registrado',
-                        text: respuesta.mensaje,
-                        icon: 'success'
-                    });
+                $('#tabla_cliente').DataTable().ajax.reload();
+                Swal.fire({
+                    title: respuesta.titulo,
+                    text: respuesta.mensaje,
+                    icon: respuesta.icono
+                });
+                if(respuesta.icono === "success"){
                     $('#formCliente')[0].reset(); 
-                } else {
-                    Swal.fire({
-                        title: respuesta.mensaje,
-                        icon: 'warning'
-                    }); 
                 }
             },
             error: function(error) {
@@ -446,7 +443,6 @@
                     text: respuesta.mensaje,
                     icon: 'success'
                 });
-                console.log(respuesta);
                 $('#formDetalleCliente')[0].reset(); 
             },
             error: function(error) {
@@ -521,7 +517,6 @@
                     text: respuesta.mensaje,
                     icon: 'success'
                 });
-                console.log(respuesta);   
             },
             error: function(error) {
                 Swal.fire({
@@ -556,7 +551,6 @@
                         type: 'GET',
                         dataType: 'json',
                         success: function(data) {
-                            console.log(resultado)
                             let combobox = $('select[name="act_idcliente"]');
                             combobox.empty();
                             for(value of data){
@@ -625,18 +619,11 @@
                     type: 'POST',
                     success: function(resultado) {
                         $('#tabla_cliente').DataTable().ajax.reload();
-                        if(resultado.mensaje === "No se puede dar de baja al cliente ya que tiene préstamos pendientes"){
-                            Swal.fire({
-                                title: resultado.mensaje,
-                                icon: 'warning'
-                            });
-                        }else{
-                            Swal.fire({
-                                title: 'Estado Actualizado',
-                                text: resultado.mensaje,
-                                icon: 'success'
-                            });
-                        }
+                        Swal.fire({
+                            title: resultado.titulo,
+                            text: resultado.mensaje,
+                            icon: resultado.icono
+                        });
                     },
                     error: function(error) {
                         Swal.fire({

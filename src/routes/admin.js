@@ -62,30 +62,66 @@ router.get("/table_client/:estado", /*isLoggedIn,*/ async(req, res) => {
 
 router.post("/client", /*isLoggedIn,*/ async(req, res) => {
     try {
-        const nombre = req.body.nombre;
-        const apellido = req.body.apellido;
-        const cedula = req.body.cedula;
-        const celular = req.body.celular;
-        const direccion = req.body.direccion;
-        const fecha_nacimiento = req.body.fecha_nacimiento;
-        const estado_civil = req.body.estado_civil;
-        const idciudadFK = req.body.idciudadFK;
-        const sexo = req.body.sexo.charAt(0);
-        const usuario = req.body.usuario;
-        const contrasena = await passwordValidation.encryptPassword(req.body.contrasena);
+        const patronNombre = /^(\s?)+[A-Za-zÁÉÍÓÚáéíóú]+(\s?)([A-Za-zÁÉÍÓÚáéíóú]?)+?(\s?)+$/;
+        const patronNumeroCelul = /^(\s?)+[0-9]{1,11}(\s?)+$/;
+        const patronCedula = /^(^$)|(^(\s?)+\d{3}(0[0-9](0[0-9]|1[0-2])[0-9][0-9]|1[0-9](0[0-9]|1[0-2])[0-9][0-9]|(2[0-9](01)|2[0-8](02)|2[0-9](03)|2[0-9](04)|2[0-9](05)||2[0-9](06)|2[0-9](07)|2[0-9](08)|2[0-9](09)|2[0-9](10)|2[0-9](11)|2[0-9](12))[0-9][0-9]|(3[0-1](01)|3[0-1](03)|3[0](04)|3[0-1](05)|3[0](06)|3[0-1](07)|3[0-1](08)|3[0](09)|3[0-1](10)|3[0](11)|3[0-1](12))[0-9][0-9])\d{4}[A-Z]{1}(\s?)+$)$/
+        const patronCorreo = /^(\s?)+[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@+[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})(\s?)+$/;
+        const patronContrasena = /^([\s]*)\w{3,12}(\s*)$/;
+        const patronCadena = /^(\s?)+([A-Za-záéíóú]){1,7}(\s?)+$/;
+        const patronDireccion = /^(\s?)+([\wáéíóú(\s),]){1,50}(\s?)+$/
+        const nombre = (req.body.nombre).trim().replace(/\s+/g, ' ');
+        const apellido = (req.body.apellido).trim().replace(/\s+/g, ' ');
+        const cedula = (req.body.cedula).trim().replace(/\s+/g, ' ');
+        const celular = (req.body.celular).trim().replace(/\s+/g, ' ');
+        const direccion = (req.body.direccion).trim().replace(/\s+/g, ' ');
+        const fecha_nacimiento = (req.body.fecha_nacimiento).trim().replace(/\s+/g, ' ');
+        const estado_civil = (req.body.estado_civil).trim().replace(/\s+/g, ' ');
+        const idciudadFK = (req.body.idciudadFK).trim().replace(/\s+/g, ' ');
+        let sexo = req.body.sexo;
+        const usuario = (req.body.usuario).trim().replace(/\s+/g, ' ');
+        let contrasena = (req.body.contrasena).trim().replace(/\s+/g, ' ');
         const cedula_unica = await verificar ('cedula', cedula, 'tblclientes');
         const celular_unico = await verificar ('celular', celular, 'tblclientes');
 
-        if (cedula_unica[0].existe_registro > 0 && celular_unico[0].existe_registro > 0) {
-            res.json({ mensaje: 'Número de Cédula y número de celular ya existe' });
+        if(!patronNombre.test(nombre)){
+            res.json({ titulo: 'Nombre no válidos', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronNombre.test(apellido)){
+            res.json({ titulo: 'Apellido no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronNumeroCelul.test(celular)){
+            res.json({ titulo: '#Celular no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronCorreo.test(usuario)){
+            res.json({ titulo: 'Correo no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronCedula.test(cedula)){
+            res.json({ titulo: '#Cédula no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronContrasena.test(contrasena)){
+            res.json({ titulo: 'Contraseña no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronDireccion.test(direccion)){
+            res.json({ titulo: 'Dirección no válida', mensaje: '', icono: 'warning'});
+        }
+        else if(!patronCadena.test(estado_civil)){
+            res.json({ titulo: 'Estado civil no válido', mensaje: '', icono: 'warning'});
+        }
+        else if(sexo == undefined){
+            res.json({ titulo: 'Campo sexo sin definir', mensaje: '', icono: 'warning'});
+        }
+        else if (cedula_unica[0].existe_registro > 0 && celular_unico[0].existe_registro > 0) {
+            res.json({ titulo: 'Número de Cédula y número de celular ya existen', mensaje: '', icono: 'warning'});
         } 
         else if((cedula_unica[0].existe_registro) > 0){
-            res.json({ mensaje: 'Número de Cédula ya existe' });
+            res.json({ titulo: 'Número de Cédula ya existe', mensaje: '', icono: 'warning'});
         }
         else if((celular_unico[0].existe_registro) > 0){
-            res.json({ mensaje: 'Número de celular ya existe' });
+            res.json({ titulo: 'Número de celular ya existe', mensaje: '', icono: 'warning'});
         } 
         else {
+            sexo = sexo.charAt(0);
+            contrasena = await passwordValidation.encryptPassword(req.body.contrasena);
             await pool.query(`CALL pa_insertar_clientes (?, ? ,?, ?, ?, ?, ?, ?, ?, ?, ?)`, [   
             nombre, apellido, 
             fecha_nacimiento,
@@ -93,7 +129,7 @@ router.post("/client", /*isLoggedIn,*/ async(req, res) => {
             celular, direccion,
             usuario, contrasena,
             estado_civil, idciudadFK ]);
-            res.json({ mensaje: 'Datos guardados correctamente' });
+            res.json({ titulo: 'Cliente registrado', mensaje: 'Datos guardados correctamente', icono: 'success'});
         }
     } catch (error) {
         console.log(error);
@@ -180,10 +216,10 @@ router.post('/update_client', async(req, res) => {
 router.post('/update_client_state/:id',/* isLoggedIn,*/ async(req, res) => {
     try {
         if((await pool.query('SELECT cliente_pretamos_pend(?) AS cant_prestamos_pend', [req.params.id]))[0].cant_prestamos_pend === 1){
-            res.json({ mensaje: 'No se puede dar de baja al cliente ya que tiene préstamos pendientes'});
+            res.json({ titulo: 'No se puede dar de baja al cliente ya que tiene préstamos pendientes', mensaje: '', icono: 'warning'});
         } else{
             await pool.query('CALL pa_actualizar_cliente_estado(?)', [req.params.id]);
-            res.json({ mensaje: 'Datos actualizados correctamente' });
+            res.json({ titulo: 'Estado actualizado', mensaje: 'Datos actualizados correctamente', icono: 'success'});
         }
     }
     catch(error){
@@ -1042,27 +1078,28 @@ router.get('/loan', async(req, res) => {
 
 router.post('/loan', async(req, res) => {
     try {
-        const patronMonto = /^(\s?)+\d{1,10}(\.{1})?(\d{1,3})?(\s?)+$/;
-        const patronPlazo = /^(\s?)+[1-9]{1,3}(\s?)+$/;
-        if(req.body.fecha_registro > new Date().toISOString().split('T')[0]){
+        const patronMonto = /^(\s?)+[1-9][0-9]{1,10}(\.{1})?(\d{1,3})?(\s?)+$/;
+        const patronPlazo = /^(\s?)+[1-9][0-9]{0,2}(\s?)+$/;
+        let plazo = req.body.plazo;
+        let monto = req.body.monto;
+        const fecha_desembolso = req.body.fecha_registro;
+        let codigo = await pool.query('SELECT IFNULL(MAX(idprestamo), 0) + 1 AS max_id FROM tblprestamos;');
+        const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [req.body.interes]);
+        if(fecha_desembolso > new Date().toISOString().split('T')[0]){
             res.json({ titulo: 'Fecha de desembolso incorrecta', mensaje: '', icono: 'warning'});
-        }
-        else if(!patronMonto.test(req.body.monto)){
+        }else if(!patronMonto.test(monto)){
             res.json({ titulo: 'Mónto inválido',  mensaje: '', icono: 'warning' });
-        }else if(!patronPlazo.test(req.body.plazo)){
+        }else if(!patronPlazo.test(plazo)){
             res.json({ titulo: 'Plazo inválido',  mensaje: '', icono: 'warning' });
         } else{
-            const plazo = parseInt(req.body.plazo);
-            let monto = parseFloat(req.body.monto);
-            const fecha_desembolso = req.body.fecha_registro;
-            let codigo = await pool.query('SELECT IFNULL(MAX(idprestamo), 0) + 1 AS max_id FROM tblprestamos;');
-            const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [req.body.interes]);
             codigo = codigo[0].max_id.toString().padStart(4, '0');
+            monto = parseFloat(monto);
+            plazo = parseInt(plazo);
             let intereses = monto;
             let sumainterescorriente = 0;
-            for(let i=0; i <  parseInt(plazo); i++){
+            for(let i=0; i <  plazo; i++){
                 sumainterescorriente += (intereses * valor_interes[0].valor_interes);
-                intereses -= parseFloat(monto/plazo);
+                intereses -= (monto/plazo);
             }
             const insertar_prestamo =   await pool.query(`CALL pa_insertar_prestamos (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
                 codigo, 
@@ -1078,22 +1115,129 @@ router.post('/loan', async(req, res) => {
                 fecha_desembolso ]);
             const fecha_registro =  await pool.query (`SELECT fecha_registro FROM tblprestamos WHERE idprestamo = ?`, [insertar_prestamo[0][0].obt_id]);
             intereses = monto;
-            for(let i=0; i <  parseInt(plazo); i++){
+            for(let i=0; i <  plazo; i++){
                 await pool.query (`
                 CALL pa_insertar_cuotas (?, ?, ?, ?, ?, ?)`, [ 
                 insertar_prestamo[0][0].obt_id, 
                 i+1, 
                 new Date(fecha_registro[0].fecha_registro.setMonth(fecha_registro[0].fecha_registro.getMonth() + 1)), 
-                parseFloat(monto)/parseInt(plazo),
+                (monto/plazo),
                 intereses * valor_interes[0].valor_interes,
-                (parseFloat(monto) + parseFloat(sumainterescorriente)) / parseInt(plazo) ]);
-                intereses -= parseFloat(monto)/parseInt(plazo);
+                (monto + sumainterescorriente) / (plazo) ]);
+                intereses -= (monto / plazo);
             }
             res.json({ titulo: 'Prestamo registrado',  mensaje: 'Datos guardados correctamente', icono: 'success' });
         }
     } catch (error) {
         console.log(error);
         res.status(500).json({ mensaje: 'Error al guardar los datos' });
+    }
+});
+
+router.get('/get_edit_loan/:id', async(req, res) => {
+    try {
+        const clientes = await pool.query(`
+        SELECT
+            idcliente, 
+            CONCAT(nombre, ' ', apellido) AS nombre
+        FROM tblclientes
+        WHERE estado = 1;`);
+
+        const datos_select = await pool.query(`
+        SELECT 
+            idclienteFK, 
+            idtipoprestamoFK,
+            idmonedaFK,
+            idinteresFK,
+            DATE_FORMAT(fecha_registro, '%Y-%m-%d') AS fecha_registro,
+            monto,
+            plazo
+        FROM tblprestamos
+        WHERE estado = 1 AND idprestamo = ?;`, [req.params.id]);
+
+        const tipoprestamos = await pool.query(`
+        SELECT
+            idtipoprestamo,
+            descripcion
+        FROM tbltipoprestamos
+        WHERE estado = 1;`);
+
+        const moneda = await pool.query(`
+        SELECT
+            idmoneda,
+            descripcion
+        FROM tblmoneda;`);
+
+        const interes = await pool.query(`
+        SELECT
+            idinteres,
+            descripcion
+        FROM tblintereses;`);
+
+        const resultado = {
+            clientes: clientes,
+            tipoprestamos: tipoprestamos,
+            moneda: moneda,
+            interes: interes,
+            datos_select: datos_select
+        };
+        res.json(resultado);
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ mensaje: 'Error al obtener los datos'});
+    }
+});
+
+router.post('/update_loan', async(req, res) => {
+    try {
+        const patronMonto = /^(\s?)+[1-9][0-9]{1,10}(\.{1})?(\d{1,3})?(\s?)+$/;
+        const patronPlazo = /^(\s?)+[1-9][0-9]{0,2}(\s?)+$/;
+        const idprestamo = req.body.act_idprestamo;
+        const idcliente = req.body.act_cliente;
+        const idtipoprestamo = req.body.act_tipoprestamo;
+        const idtipomoneda = req.body.act_tipomoneda;
+        const idinteres = req.body.act_tazainteres;
+        const fecha_desembolso = req.body.act_fechadesembolso;
+        let monto = req.body.act_monto;
+        let plazo = req.body.act_plazo;
+
+        if(fecha_desembolso > new Date().toISOString().split('T')[0]){
+            res.json({ titulo: 'Fecha de desembolso incorrecta', mensaje: '', icono: 'warning'});
+        }else if(!patronMonto.test(monto)){
+            res.json({ titulo: 'Mónto inválido',  mensaje: '', icono: 'warning' });
+        }else if(!patronPlazo.test(plazo)){
+            res.json({ titulo: 'Plazo inválido',  mensaje: '', icono: 'warning' });
+        }else{
+            monto = parseFloat(monto);
+            plazo = parseInt(plazo);
+            const valor_interes = await pool.query('SELECT ROUND(descripcion / 100, 3) AS valor_interes FROM tblintereses WHERE idinteres = ?', [idinteres]);
+            let cal_intereses = monto;
+            let sumainterescorriente = 0;
+            for(let i=0; i <  plazo; i++){
+                sumainterescorriente += (cal_intereses * valor_interes[0].valor_interes);
+                cal_intereses -= monto/plazo;
+            }
+            await pool.query(`DELETE FROM tblcuotas  WHERE idprestamoFK = ?`, [idprestamo]);
+            await pool.query(`CALL pa_actualizar_prestamos (?, ?, ?, ?, ?, ?, ?, ?, ?);`, [
+            idprestamo, idcliente, idtipoprestamo, idinteres, idtipomoneda, monto, plazo, sumainterescorriente, fecha_desembolso]);
+            const fecha_registro =  await pool.query (`SELECT fecha_registro FROM tblprestamos WHERE idprestamo = ?`, [idprestamo]);
+            cal_intereses = monto;
+            for(let i=0; i <  parseInt(plazo); i++){
+                await pool.query (`
+                CALL pa_insertar_cuotas (?, ?, ?, ?, ?, ?)`, [ 
+                idprestamo, 
+                i+1, 
+                new Date(fecha_registro[0].fecha_registro.setMonth(fecha_registro[0].fecha_registro.getMonth() + 1)), 
+                monto/plazo,
+                cal_intereses * valor_interes[0].valor_interes,
+                (monto + sumainterescorriente) / plazo ]);
+                cal_intereses -= (monto/plazo);
+            }
+            res.json({ titulo: 'Datos del préstamo actualizado', mensaje: 'Datos actualizados correctamente', icono: 'success'});
+        }
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ mensaje: 'Error al actualizar los datos'});
     }
 });
 
@@ -1109,7 +1253,7 @@ router.get("/table_loan", async(req, res) => {
                 DATE_FORMAT(P.fecha_registro, '%Y-%m-%d') AS fecha_registro_formateada,
                 DATE_FORMAT(P.fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
                 DATE_FORMAT(P.fecha_fin, '%Y-%m-%d') fecha_fin,
-                plazo,
+                IF(plazo = 1, CONCAT(plazo, ' mes'), CONCAT(plazo, ' meses')) AS plazo,
                 CONCAT(M.simbolo, P.intereses) AS intereses,
                 CONCAT(M.simbolo, '', SUM(CO.abono) -  (SELECT 
                                     IFNULL(SUM(PO.pago), 0) AS pago
@@ -1142,7 +1286,7 @@ router.get("/table_loan/:estado", async(req, res) => {
             DATE_FORMAT(P.fecha_registro, '%Y-%m-%d') AS fecha_registro_formateada,
             DATE_FORMAT(P.fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
             DATE_FORMAT(P.fecha_fin, '%Y-%m-%d') fecha_fin,
-            plazo,
+            IF(plazo = 1, CONCAT(plazo, ' mes'), CONCAT(plazo, ' meses')) AS plazo,
             CONCAT(M.simbolo, P.intereses) AS intereses,
             CONCAT(M.simbolo, '', SUM(CO.abono) -  (SELECT 
                                 IFNULL(SUM(PO.pago), 0) AS pago
@@ -1197,7 +1341,7 @@ router.get("/get_quota/:id", async(req, res) => {
             DATE_FORMAT(P.fecha_inicio, '%Y-%m-%d') AS fecha_inicio,
             DATE_FORMAT(P.fecha_fin, '%Y-%m-%d') AS fecha_fin,
             CONCAT(M.simbolo, P.monto) AS monto,
-            P.plazo AS plazo,
+            IF(P.plazo = 1, CONCAT(P.plazo, ' mes'), CONCAT(P.plazo, ' meses')) AS plazo,
             CONCAT(I.descripcion,'%     ', SUBSTRING(I.descripcion/100, 1, 5)) AS interes,
             CONCAT(M.simbolo, ' ', SUM(C.abono) -  (SELECT 
                                                         IFNULL(SUM(PO.pago), 0) AS pago
@@ -1365,7 +1509,6 @@ router.post("/get_payments_quotas", async(req, res) => {
 router.post("/payments_quotas", async (req, res) => {
     try {
         const patronMonto = /^(\s?)+(\d{1,10}(\.{1})?(\d{1,3})?)?(\s?)+$/;
-        console.log(req.body.det_descuento)
         if(req.body.det_pago === "" || req.body.det_pago === "0"){
             res.json({ titulo: 'No hay asignado ningún monto', mensaje: '', icono: 'warning'});
         }

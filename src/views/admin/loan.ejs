@@ -106,6 +106,7 @@
                         <th scope="col">Intereses</th>
                         <th scope="col">Saldo pendiente</th>
                         <th scope="col"></th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody class="table-striped">
@@ -183,6 +184,62 @@
         </div>
     </div>
 </div>
+<div class="modal fade" id="prestamosActualizarModal" tabindex="-1" aria-labelledby="prestamosActualizarModal" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="prestamosActualizarModal">Actualizar datos de los Prestamos</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <form id="actualizar_datos_prestamos" class="row">
+                <div class="col-md-12">
+                    <div>
+                        <input type="hidden" class="form-control" id="act_idprestamo" name="act_idprestamo">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="act_cliente" class="form-label mb-2">Cliente</label>
+                        <select class="form-control form-control-sm" aria-label="Default select example" id="act_cliente" name="act_cliente"></select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-2">
+                        <label for="act_tipoprestamo" class="form-label mb-2">Tipo de préstamo</label>
+                        <select class="form-control form-control-sm" aria-label="Default select example" id="act_tipoprestamo" name="act_tipoprestamo"></select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="act_tipomoneda" class="form-label mb-2">Tipo de moneda</label>
+                        <select class="form-control form-control-sm" aria-label="Default select example" id="act_tipomoneda" name="act_tipomoneda"></select>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="act_tazainteres" class="form-label mb-2">Taza de interés</label>
+                        <select class="form-control form-control-sm" aria-label="Default select example" id="act_tazainteres" name="act_tazainteres"></select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group mb-2">
+                        <label for="act_fechadesembolso" class="form-label mb-2">Fecha desembolso</label>
+                        <input type="date" class="form-control form-control-sm" aria-label="Default select example" id="act_fechadesembolso" name="act_fechadesembolso"></input>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="act_monto" class="form-label mb-2">Monto</label>
+                        <input type="text" oninput="validarNumero(this)" class="form-control form-control-sm" aria-label="Default select example" id="act_monto" name="act_monto" required></input>
+                    </div>
+                    <div class="form-group mb-2">
+                        <label for="act_plazo" class="form-label mb-2">Plazo</label>
+                        <input type="number" oninput="validarPlazo(this)" class="form-control form-control-sm" aria-label="Default select example" id="act_plazo" name="act_plazo" required></input>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="submit" class="btn btn-primary">Actualizar</button>
+                </div>       
+            </form>
+        </div>
+      </div>
+    </div>
+</div>
+
 <script>
     $(document).ready(function() {
         $(document).ajaxStart(function() {
@@ -195,7 +252,7 @@
         function cargar_tabla_prestamo(){
             $('#tabla_prestamo').DataTable({
                 columnDefs: [
-                    { "orderable": false, "targets": [10] } 
+                    { "orderable": false, "targets": [10, 11] } 
                     ],
                 lengthChange: false,
                 info: false,
@@ -217,11 +274,18 @@
                     { data: 'intereses',  className: 'text-center'  },
                     { data: 'abono_restante',  className: 'text-center'  },
                     {
-                    data: null,
-                    render: function(data, type, row) {
-                        return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                        data: null,
+                        render: function(data, type, row) {
+                            return `<button style="border:none; background-color: transparent;" class="btn-getedit" data-id="` + data.idprestamo + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                        },
+                        className: 'text-center'
                     },
-                    className: 'text-center'
+                    {
+                        data: null,
+                        render: function(data, type, row) {
+                            return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                        },
+                        className: 'text-center'
                     }
                 ],       
                 dom: 'lrtip',
@@ -240,7 +304,7 @@
             else{
                 $('#tabla_prestamo').DataTable({
                     columnDefs: [
-                        { "orderable": false, "targets": [9] } 
+                        { "orderable": false, "targets": [10, 11] } 
                         ],
                     lengthChange: false,
                     info: false,
@@ -262,11 +326,18 @@
                         { data: 'intereses',  className: 'text-center'  },
                         { data: 'abono_restante',  className: 'text-center'  },
                         {
-                        data: null,
-                        render: function(data, type, row) {
-                            return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                            data: null,
+                            render: function(data, type, row) {
+                                return `<button style="border:none; background-color: transparent;" class="btn-getedit" data-id="` + data.idprestamo + `"><i class="fa-solid fa-pen" style="font-size: 16px; color: #000;"></i></button>`;
+                            },
+                            className: 'text-center'
                         },
-                        className: 'text-center'
+                        {
+                            data: null,
+                            render: function(data, type, row) {
+                                return  `<button style="border:none; background:transparent;" class="btn-edit" data-id="` + data.idprestamo + `"><i class="fa-regular fa-eye" style="font-size:16px; color:#000;"></i></button>`;
+                            },
+                            className: 'text-center'
                         }
                     ],       
                     dom: 'lrtip',
@@ -422,6 +493,97 @@
         }
     });
 
+    $(document).on('click', '.btn-getedit', function() {
+        const id = $(this).data('id');
+        $.ajax({
+            url: '/admin/get_edit_loan/'+ id,
+            dataType: 'json',
+            method: 'GET',
+            success: function(resultado) {
+                $('#actualizar_datos_prestamos input[name = "act_idprestamo"]').val(id);
+                $('#actualizar_datos_prestamos input[name = "act_monto"]').val(resultado.datos_select[0].monto);
+                $('#actualizar_datos_prestamos input[name = "act_plazo"]').val(resultado.datos_select[0].plazo);
+                $('#actualizar_datos_prestamos input[name = "act_fechadesembolso"]').val(resultado.datos_select[0].fecha_registro);
+                const combobox_cliente = $('select[name="act_cliente"]');
+                combobox_cliente.empty();
+                for(value of resultado.clientes){
+                    if(resultado.datos_select[0].idclienteFK == value.idcliente){
+                        combobox_cliente.append($('<option selected>').text(value.nombre).attr('value', value.idcliente));
+                    } else {
+                        combobox_cliente.append($('<option>').text(value.nombre).attr('value', value.idcliente));
+                    }
+                }
+
+                const combobox_tipoprestamo = $('select[name="act_tipoprestamo"]');
+                combobox_tipoprestamo.empty();
+                for(value of resultado.tipoprestamos){
+                    if(resultado.datos_select[0].idtipoprestamoFK === value.idtipoprestamo){
+                        combobox_tipoprestamo.append($('<option selected>').text(value.descripcion).attr('value', value.idtipoprestamo));
+                    } else {
+                        combobox_tipoprestamo.append($('<option>').text(value.descripcion).attr('value', value.idtipoprestamo));
+                    }
+                }
+
+                const combobox_moneda = $('select[name="act_tipomoneda"]');
+                combobox_moneda.empty();
+                for(value of resultado.moneda){
+                    if(resultado.datos_select[0].idmonedaFK === value.idmoneda){
+                        combobox_moneda.append($('<option selected>').text(value.descripcion).attr('value', value.idmoneda));
+                    } else {
+                        combobox_moneda.append($('<option>').text(value.descripcion).attr('value', value.idmoneda));
+                    }
+                }
+
+                const combobox_interes = $('select[name="act_tazainteres"]');
+                combobox_interes.empty();
+                for(value of resultado.interes){
+                    if(resultado.datos_select[0].idinteresFK === value.idinteres){
+                        combobox_interes.append($('<option selected>').text(value.descripcion).attr('value', value.idinteres));
+                    } else {
+                        combobox_interes.append($('<option>').text(value.descripcion).attr('value', value.idinteres));
+                    }
+                }
+                $('#prestamosActualizarModal').modal('show'); 
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+
+    $('#actualizar_datos_prestamos').on('submit', function(e) {
+        e.preventDefault();
+        const datosFormulario = $(this).serialize(); 
+        $.ajax({
+            url: '/admin/update_loan',
+            method: 'POST',
+            data: datosFormulario,
+            dataType: 'json',
+            success: function(respuesta) {
+                Swal.fire({
+                    title: respuesta.titulo,
+                    text: respuesta.mensaje,
+                    icon: respuesta.icono
+                });
+                if(respuesta.icono === "success"){
+                    $('#tabla_prestamo').DataTable().ajax.reload();
+                    $('#prestamosActualizarModal').modal('hide'); 
+                }
+            },
+            error: function(error) {
+                Swal.fire({
+                    title: 'Error',
+                    text:  error.responseJSON.mensaje,
+                    icon: 'error'
+                });
+            }
+        });
+    });
+
     $('#buscar').on('keyup', function () {
         $('#tabla_prestamo').DataTable().search(this.value).draw();
     });
@@ -432,7 +594,7 @@
     }
 
     function validarPlazo(input){
-        input.value = input.value.replace(/[^1-9]/g, '').substr(0, 3);
+        input.value = input.value.replace(/[^0-9]/g, '').substr(0, 3);
     }
 
 </script>

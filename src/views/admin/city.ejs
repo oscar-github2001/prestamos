@@ -185,8 +185,6 @@
     
     $('#formCiudad').on('submit', function(event) {
         event.preventDefault();
-        //var mi_select = document.getElementById("departamento");
-        //console.log(mi_select);
         let datosFormulario = $(this).serialize(); 
         $.ajax({
             url: '/admin/city',
